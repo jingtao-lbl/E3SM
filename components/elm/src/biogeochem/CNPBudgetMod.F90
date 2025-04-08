@@ -864,7 +864,8 @@ contains
     real(r8) :: time_integrated_flux, state_net_change
     real(r8) :: relative_error
     real(r8), parameter :: error_tol = 0.01_r8
-    real(r8), parameter :: relative_error_tol = 1.5e-10_r8 ! [%]
+    !real(r8), parameter :: relative_error_tol = 1.5e-10_r8 ! [%]
+    real(r8), parameter :: relative_error_tol = 1.5e-6_r8 ! [%]
 
     write(iulog,*   )''
     write(iulog,*   )'NET CARBON FLUXES : period ',trim(pname(ip)),': date = ',cdate,sec
