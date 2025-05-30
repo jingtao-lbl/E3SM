@@ -6282,13 +6282,18 @@ contains
              endif
           endif
 
+        !if(.not. is_active_betr_bgc )then    !Jing Tao testing
           ! decomposition k
           data2dptr => this%decomp_k(:,:,k)
           fieldname = 'K_'//trim(decomp_cascade_con%decomp_pool_name_history(k))
           longname =  trim(decomp_cascade_con%decomp_pool_name_long(k))//' potential loss coefficient'
+          !Jing Tao - check
+          write(*, *) 'hist_addfld_decomp: adding ', k, fieldname, longname, is_active_betr_bgc
            call hist_addfld_decomp (fname=fieldname, units='1/s',  type2d='levdcmp', &
                 avgflag='A', long_name=longname, &
                  ptr_col=data2dptr, default='inactive')
+        !endif
+           
        end do
        if(.not. is_active_betr_bgc )then
           this%decomp_cascade_hr(begc:endc,:)             = spval
@@ -7009,6 +7014,7 @@ contains
        ! end of C14 block
     end if  ! use_fates (C12) or C12 or C13 or C14
 
+    !if(.not. is_active_betr_bgc )then    !Jing Tao testing
     ! this block is outside the regular C12, C13, C14 if-else, uses a different mechanism to select
     ctag=get_carbontag(carbon_type)
     do k = 1, ndecomp_pools
@@ -7028,7 +7034,8 @@ contains
              avgflag='A', long_name=longname, &
               ptr_col=data2dptr, default='inactive')
     enddo
-
+    !endif
+    
     !-----------------------------------------------------------------------
     ! set cold-start initial values for select members of col_cf
     !-----------------------------------------------------------------------
