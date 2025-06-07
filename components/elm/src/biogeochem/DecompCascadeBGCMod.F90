@@ -281,6 +281,8 @@ contains
     !
     ! !USES:
      use elm_time_manager , only : get_step_size
+     use tracer_varcon    , only : is_active_betr_bgc
+     use elm_varctl       , only : use_betr
     !
     ! !ARGUMENTS:
     type(bounds_type)    , intent(in)    :: bounds
@@ -389,12 +391,12 @@ contains
 
       rf_cwdl2 = DecompBGCParamsInst%rf_cwdl2_bgc
       rf_cwdl3 = DecompBGCParamsInst%rf_cwdl3_bgc
-
+      
       ! set the cellulose and lignin fractions for coarse woody debris
       cwd_fcel = DecompBGCParamsInst%cwd_fcel_bgc
       cwd_flig = DecompBGCParamsInst%cwd_flig_bgc
-
-        ! set path fractions
+            
+      ! set path fractions
       f_s2s1 = 0.42_r8/(0.45_r8)
       f_s2s3 = 0.03_r8/(0.45_r8)
 
@@ -408,7 +410,7 @@ contains
             rf_s1s3(c,j) = t
          end do
       end do
-
+      
       !-------------------  list of pools and their attributes  ------------
       i_litr1                                  = i_met_lit
       floating_cn_ratio_decomp_pools (i_litr1) = .true.

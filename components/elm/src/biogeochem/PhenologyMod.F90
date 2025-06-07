@@ -361,7 +361,7 @@ contains
     ! !ARGUMENTS:
     implicit none
     type(bounds_type), intent(in) :: bounds
-    real(r8) :: dt
+    real(r8) :: dt, fracday
     !------------------------------------------------------------------------
 
     !

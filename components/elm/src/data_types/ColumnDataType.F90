@@ -6282,17 +6282,15 @@ contains
              endif
           endif
 
-        !if(.not. is_active_betr_bgc )then    !Jing Tao testing
           ! decomposition k
           data2dptr => this%decomp_k(:,:,k)
           fieldname = 'K_'//trim(decomp_cascade_con%decomp_pool_name_history(k))
           longname =  trim(decomp_cascade_con%decomp_pool_name_long(k))//' potential loss coefficient'
           !Jing Tao - check
-          write(*, *) 'hist_addfld_decomp: adding ', k, fieldname, longname, is_active_betr_bgc
+          !write(*, *) 'hist_addfld_decomp: adding ', k, fieldname, longname, is_active_betr_bgc
            call hist_addfld_decomp (fname=fieldname, units='1/s',  type2d='levdcmp', &
                 avgflag='A', long_name=longname, &
                  ptr_col=data2dptr, default='inactive')
-        !endif
            
        end do
        if(.not. is_active_betr_bgc )then

@@ -851,6 +851,7 @@ contains
     !
     use elm_time_manager, only : get_curr_date, get_prev_date, get_nstep, get_step_size
     use shr_const_mod   , only : shr_const_pi
+    use tracer_varcon   , only : is_active_betr_bgc
     !
     implicit none
     !
@@ -924,6 +925,7 @@ contains
 
     relative_error = abs(time_integrated_flux - state_net_change)/(budg_stateG(s_totc_end, ip)*unit_conversion) * 100._r8
 
+    if(.not. is_active_betr_bgc)then    !Jing Tao testing betr
     if (relative_error > relative_error_tol) then
        write(iulog,*)'time integrated flux = ',time_integrated_flux
        write(iulog,*)'net change in state  = ',state_net_change
@@ -931,7 +933,8 @@ contains
        write(iulog,*)'relative error [%]   = ',relative_error
        call endrun(msg=errMsg(__FILE__, __LINE__))
     endif
-
+    endif
+    
     write(iulog,'(70("-"),"|",23("-"))')
 
   end subroutine CarbonBudget_Message

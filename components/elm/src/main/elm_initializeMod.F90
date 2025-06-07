@@ -676,7 +676,7 @@ contains
     call readPrivateParameters()
 
     if (use_cn .or. use_fates) then
-       if (.not. is_active_betr_bgc)then
+       !if (.not. is_active_betr_bgc)then   !Jing Tao testing
           if (use_century_decomp) then
            ! Note that init_decompcascade_bgc needs cnstate_vars to be initialized
              call init_decompcascade_bgc(bounds_proc, cnstate_vars, soilstate_vars)
@@ -684,7 +684,7 @@ contains
            ! Note that init_decompcascade_cn needs cnstate_vars to be initialized
              call init_decompcascade_cn(bounds_proc, cnstate_vars)
           end if
-       endif
+       !endif
     endif
 
     ! FATES is instantiated in the following call.  The global is in clm_inst

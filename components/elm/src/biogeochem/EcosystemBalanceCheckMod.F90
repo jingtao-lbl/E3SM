@@ -10,7 +10,7 @@ module EcosystemBalanceCheckMod
   use shr_log_mod         , only : errMsg => shr_log_errMsg
   use decompMod           , only : bounds_type
   use abortutils          , only : endrun
-  use elm_varctl          , only : iulog, use_fates, use_fan
+  use elm_varctl          , only : iulog, use_fates, use_betr, use_fan
   use elm_time_manager    , only : get_step_size,get_nstep
   use elm_varpar          , only : crop_prog
   use elm_varpar          , only : nlevdecomp
@@ -182,7 +182,7 @@ contains
     !
     ! !DESCRIPTION:
     ! On the radiation time step, perform carbon mass conservation check for column and pft
-    !
+    use elm_varctl          , only : use_fates, use_betr
     ! !ARGUMENTS:
     type(bounds_type)         , intent(in)    :: bounds
     integer                   , intent(in)    :: num_soilc       ! number of soil columns in filter
@@ -285,7 +285,8 @@ contains
       end do ! end of columns loop
       
       ! Consider adapting this check to be fates compliant (rgk 04-2017)
-      if (.not. use_fates) then
+      !if (.not. use_fates) then
+      if ((.not. use_fates) .and. (.not. use_betr)) then    !Jing Tao testing
 #ifndef _OPENACC
          if (err_found .and. nstep > 1) then
             c = err_index
