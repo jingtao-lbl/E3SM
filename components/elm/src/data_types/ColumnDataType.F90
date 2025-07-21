@@ -6438,6 +6438,13 @@ contains
                 avgflag='A', long_name='total vertically resolved heterotrophic respiration', &
                  ptr_col=this%hr_vr)
 
+          !Jing Tao
+          this%rr_vr(begc:endc,:) = spval
+          call hist_addfld2d (fname='RR_vr', units='gC/m^3/s', type2d='levdcmp', &
+               avgflag='A', long_name='total vertically resolved root respiration', &
+                ptr_col=this%rr_vr)
+
+
           ! pflotran
           this%f_co2_soil_vr(begc:endc,:) = spval
            call hist_addfld2d (fname='F_CO2_SOIL_vr', units='gC/m^3/s', type2d='levdcmp', &
@@ -7254,13 +7261,14 @@ contains
           end do
        end do
 
-       ! total heterotrophic respiration (HR)
-       do fc = 1,num_soilc
-          c = filter_soilc(fc)
-          this%hr(c) = &
-               this%lithr(c) + &
-               this%somhr(c)
-       end do
+       !Jing Tao moved this to below after updating lithr and somhr
+       !! total heterotrophic respiration (HR)
+       !do fc = 1,num_soilc
+       !   c = filter_soilc(fc)
+       !   this%hr(c) = &
+       !        this%lithr(c) + &
+       !        this%somhr(c)
+       !end do
 
     elseif (is_active_betr_bgc) then
 
@@ -7323,7 +7331,6 @@ contains
     end do
 
     ! total heterotrophic respiration, vertically resolved (HR)
-
     do k = 1, ndecomp_cascade_transitions
        do j = 1,nlevdecomp
           do fc = 1,num_soilc
@@ -7333,6 +7340,15 @@ contains
                 this%decomp_cascade_hr_vr(c,j,k)
           end do
        end do
+    end do
+
+    ! Jing Tao moved HR calculation here
+    ! total heterotrophic respiration (HR)
+    do fc = 1,num_soilc
+          c = filter_soilc(fc)
+          this%hr(c) = &
+               this%lithr(c) + &
+               this%somhr(c)
     end do
 
     !----------------------------------------------------------------
@@ -7712,6 +7728,8 @@ contains
           this%harvest_c_to_cwdc(i,j)             = value_column
 
           this%hr_vr(i,j)                         = value_column
+          this%rr_vr(i,j)                         = value_column  !Jing Tao
+
        end do
     end do
     do l = 1, ndecomp_cascade_transitions

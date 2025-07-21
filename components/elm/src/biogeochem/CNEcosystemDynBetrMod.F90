@@ -279,7 +279,8 @@ module CNEcosystemDynBetrMod
 
        call t_startf('GrowthResp')
        call GrowthResp(num_soilp, filter_soilp )
-       call t_stopf('CNGResp')
+       !call t_stopf('CNGResp')
+       call t_stopf('GrowthResp')
        
        call veg_cf%SummaryRR(bounds, num_soilp, filter_soilp, num_soilc, filter_soilc, col_cf)
        if(use_c13) then

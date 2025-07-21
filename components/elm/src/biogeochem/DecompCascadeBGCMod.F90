@@ -866,8 +866,10 @@ contains
          ! Orchard, V.A., and F.J. Cook, 1983. Relationship between soil respiration
          ! and soil moisture. Soil Biol. Biochem., 15(4):447-453.
 
-         minpsi = -10.0_r8;
-
+         !Jing Tao
+         !minpsi = -10.0_r8; 
+         minpsi = DecompBGCParamsInst%minpsi_bgc
+         
          do j = 1,nlev_soildecomp_standard
             do fc = 1,num_soilc
                c = filter_soilc(fc)
@@ -963,7 +965,10 @@ contains
          ! Orchard, V.A., and F.J. Cook, 1983. Relationship between soil respiration
          ! and soil moisture. Soil Biol. Biochem., 15(4):447-453.
 
-         minpsi = -10.0_r8;
+         !Jing Tao
+         !minpsi = -10.0_r8;
+         minpsi = DecompBGCParamsInst%minpsi_bgc
+         
          do j = 1,nlevdecomp
             do fc = 1,num_soilc
                c = filter_soilc(fc)
