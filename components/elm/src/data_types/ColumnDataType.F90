@@ -5203,13 +5203,15 @@ contains
 
           do c = bounds%begc, bounds%endc
              if (use_vertsoilc) then
-                ! !Jing Tao (2026-07-09): column-level P-source decision (labile-driven, all-or-nothing).
-                ! The surfdata P maps used here (e.g. surfdata_Kougarok_..._ModPval.nc) are ~0, so
-                ! re-prescribing P from them would wipe the ADSP-spun-up P read from the restart. Only
-                ! adopt the surfdata profile only if the surfdata column labile P (labp_col, g/m2 over the
-                ! top 50 cm) EXCEEDS the ADSP pool it maps to. NB the block below solves labp_col*pinit_prof
-                ! into solution + adsorbed, so labp_col == solutionp + labilep; compare against the ADSP
-                ! (solutionp + labilep) integrated over the same top 50 cm, else keep ADSP.
+                ! !Jing Tao (2026-07-09): column-level P-source decision (labile-driven, WHOLE-SUITE
+                ! all-or-nothing). One decision per column gates the entire re-prescription below, so ALL
+                ! five P pools (solutionp/labilep/secondp/occlp/primp) come from EITHER the surfdata maps OR
+                ! the ADSP restart — never a mix. The surfdata P maps here (e.g.
+                ! surfdata_Kougarok_..._ModPval.nc) are ~0, so re-prescribing from them would wipe the
+                ! ADSP-spun-up P read from the restart; adopt the surfdata suite only if the surfdata column
+                ! labile P (labp_col, g/m2 over the top 50 cm) EXCEEDS the ADSP pool it maps to. NB the block
+                ! below solves labp_col*pinit_prof into solution + adsorbed, so labp_col == solutionp +
+                ! labilep; compare against ADSP (solutionp + labilep) integrated over the same top 50 cm.
                 labp_adsp_col = 0._r8
                 do j = 1, j_depth
                    labp_adsp_col = labp_adsp_col + ( this%labilep_vr(c,j) + this%solutionp_vr(c,j) ) * dzsoi_decomp(j)
@@ -5220,7 +5222,7 @@ contains
                    ! phosphorus
                    ! the P maps used in the initialization are generated for the top 50cm soils
                    ! Prescribe P initial profile based on exponential rooting profile [need to improve]
-                   ! !Jing Tao: gate re-prescription on the surfdata>ADSP labile test above.
+                   ! !Jing Tao: gate the WHOLE-SUITE re-prescription on the surfdata>ADSP (labile+solution) test above.
                    if (((nu_com .eq. 'ECA') .or. (nu_com .eq. 'MIC')) .and. use_surf_p) then
                       a = 1.0_r8
                       b = VMAX_MINSURF_P_vr(j,cnstate_vars%isoilorder(c)) + &
