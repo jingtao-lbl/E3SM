@@ -864,7 +864,12 @@ contains
          ! Orchard, V.A., and F.J. Cook, 1983. Relationship between soil respiration
          ! and soil moisture. Soil Biol. Biochem., 15(4):447-453.
 
-         minpsi = -10.0_r8;
+         !Jing Tao (2026-07-09, branch elm-minpsi-decomp-api43): minpsi -10.0 -> -1000.0 MPa.
+         ! Effectively removes the dry-soil floor on the decomposition moisture scalar w_scalar
+         ! (the "if (psi > minpsi)" gate + log(minpsi/psi)/log(minpsi/maxpsi)), so heterotrophic
+         ! decomposition is not moisture-limited even at very negative soil water potential.
+         ! Ported from the api-31 demo tree (there it was a terse "!TJ").
+         minpsi = -1000.0_r8   !Jing Tao: was -10.0_r8
 
          do j = 1,nlev_soildecomp_standard
             do fc = 1,num_soilc
@@ -961,7 +966,12 @@ contains
          ! Orchard, V.A., and F.J. Cook, 1983. Relationship between soil respiration
          ! and soil moisture. Soil Biol. Biochem., 15(4):447-453.
 
-         minpsi = -10.0_r8;
+         !Jing Tao (2026-07-09, branch elm-minpsi-decomp-api43): minpsi -10.0 -> -1000.0 MPa.
+         ! Effectively removes the dry-soil floor on the decomposition moisture scalar w_scalar
+         ! (the "if (psi > minpsi)" gate + log(minpsi/psi)/log(minpsi/maxpsi)), so heterotrophic
+         ! decomposition is not moisture-limited even at very negative soil water potential.
+         ! Ported from the api-31 demo tree (there it was a terse "!TJ").
+         minpsi = -1000.0_r8   !Jing Tao: was -10.0_r8
          do j = 1,nlevdecomp
             do fc = 1,num_soilc
                c = filter_soilc(fc)
