@@ -4972,6 +4972,8 @@ contains
     real(r8)           :: pinit_prof(1:nlevdecomp)
     real(r8)           :: depth,pinit_prof_tot,tmp_scalar ! depth threshold for different p initialization profiles
     integer            :: j_depth    ! jth depth index for different p initializaiton profiles
+    real(r8)           :: labp_adsp_col  ! !Jing Tao: column-integrated ADSP labile P (g/m2, top 50cm) for the surfdata-vs-ADSP P-source test
+    logical            :: use_surf_p     ! !Jing Tao: adopt the surfdata P profile only if it exceeds the ADSP labile
     !------------------------------------------------------------------------
 
     associate(&
@@ -5201,12 +5203,23 @@ contains
 
           do c = bounds%begc, bounds%endc
              if (use_vertsoilc) then
+                ! !Jing Tao (2026-07-09): column-level P-source decision (labile-driven, all-or-nothing).
+                ! The surfdata P maps used here (e.g. surfdata_Kougarok_..._ModPval.nc) are ~0, so
+                ! re-prescribing P from them would wipe the ADSP-spun-up P read from the restart. Only
+                ! adopt the surfdata profile if the surfdata column labile P (labp_col, g/m2 over the top
+                ! 50 cm) EXCEEDS the ADSP labile integrated over the same top 50 cm; else keep ADSP.
+                labp_adsp_col = 0._r8
+                do j = 1, j_depth
+                   labp_adsp_col = labp_adsp_col + this%labilep_vr(c,j) * dzsoi_decomp(j)
+                end do
+                use_surf_p = ( cnstate_vars%labp_col(c) > labp_adsp_col )
                 do j = 1, nlevdecomp
                    ! solve equilibrium between loosely adsorbed and solution
                    ! phosphorus
                    ! the P maps used in the initialization are generated for the top 50cm soils
                    ! Prescribe P initial profile based on exponential rooting profile [need to improve]
-                   if ((nu_com .eq. 'ECA') .or. (nu_com .eq. 'MIC')) then
+                   ! !Jing Tao: gate re-prescription on the surfdata>ADSP labile test above.
+                   if (((nu_com .eq. 'ECA') .or. (nu_com .eq. 'MIC')) .and. use_surf_p) then
                       a = 1.0_r8
                       b = VMAX_MINSURF_P_vr(j,cnstate_vars%isoilorder(c)) + &
                           KM_MINSURF_P_vr(j,cnstate_vars%isoilorder(c)) - cnstate_vars%labp_col(c)*pinit_prof(j)
