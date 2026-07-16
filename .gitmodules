@@ -1,6 +1,7 @@
 [submodule "fates"]
 	path = components/elm/src/external_models/fates
 	url = git@github.com:jingtao-lbl/fates.git
+	branch = main
 [submodule "alm-mpp"]
 	path = components/elm/src/external_models/mpp
 	url = git@github.com:MPP-LSM/MPP.git
