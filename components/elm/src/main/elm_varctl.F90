@@ -464,6 +464,26 @@ module elm_varctl
   logical, public :: NFIX_PTASE_plant = .false.
   !$acc declare create(NFIX_PTASE_plant)
   !-----------------------------------------------------------------------
+  ! Jing Tao (2026-08-09, branch exp/nbalance-and-p-litter-diag): switch-gates the
+  ! PrecisionControlMod.F90 mineral-N clip fix. That clip silently discards small
+  ! negative smin_no3_vr/smin_nh4_vr without crediting ntrunc_vr, unlike the
+  ! decomposing-pool clip four lines above it in the same file, which does credit it
+  ! -- an uncompensated sink candidate for the R1 ColNBalanceCheck non-closure (A2MC
+  ! use_cases/Kougarok/reports/20260809b_R1_nbalance_ntrunc_clip_forensics_and_fix).
+  ! Default .false. reproduces current (buggy) behaviour bit-for-bit (V0-at-equality).
+  logical, public :: use_nbalance_ntrunc_fix = .false.
+  !$acc declare copyin(use_nbalance_ntrunc_fix)
+  !-----------------------------------------------------------------------
+  ! Jing Tao (2026-08-09, branch exp/nbalance-and-p-litter-diag): switch-gates a
+  ! read-only daily diagnostic (no state changed) comparing the FATES phosphorus
+  ! efflux entering the metabolic litter pool against gross_pmin_vr and the pool's
+  ! own state, to test whether the ~800-fold P-supplemented-spin-up litter gap (A2MC
+  ! use_cases/Kougarok/reports/20260809c_R1_p_litter_efflux_trace_and_diagnostic_proposal)
+  ! is a fast same-day round trip invisible at monthly output frequency. Default
+  ! .false. emits nothing.
+  logical, public :: use_p_litter_diag = .false.
+  !$acc declare copyin(use_p_litter_diag)
+  !-----------------------------------------------------------------------
   !CO2 and warming experiments
   character(len=8), public :: startdate_add_temperature ='99991231'
   character(len=8), public :: startdate_add_co2         ='99991231'

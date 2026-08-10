@@ -12,7 +12,11 @@ module EcosystemDynMod
   use perf_mod            , only : t_startf, t_stopf
   use spmdMod             , only : masterproc
   use elm_varctl          , only : use_century_decomp
-  use elm_varctl          , only : ero_ccycle 
+  use elm_varctl          , only : ero_ccycle
+  use elm_varctl          , only : use_p_litter_diag, iulog
+  use elm_varpar          , only : i_met_lit, nlevdecomp
+  use elm_varcon          , only : dzsoi_decomp
+  use elm_time_manager    , only : is_beg_curr_day, get_nstep
   use CNStateType         , only : cnstate_type
   use CanopyStateType     , only : canopystate_type
   use SoilStateType       , only : soilstate_type
@@ -549,6 +553,10 @@ contains
     type(sedflux_type)       , intent(in)    :: sedflux_vars
     real(r8) :: dt
     integer :: c13, c14
+    ! Jing Tao (2026-08-09, branch exp/nbalance-and-p-litter-diag): loop indices for
+    ! the use_p_litter_diag print only; this routine otherwise passes num_soilc/
+    ! filter_soilc through to callees without looping over columns itself.
+    integer :: fc, c
     c13 = 0
     c14 = 1
     !-----------------------------------------------------------------------
@@ -716,6 +724,25 @@ contains
    call SoilLittVertTransp( num_soilc, filter_soilc, &
             canopystate_vars, cnstate_vars )
        call t_stopf('SoilLittVertTransp')
+
+   ! Jing Tao (2026-08-09, branch exp/nbalance-and-p-litter-diag): read-only daily
+   ! diagnostic (no state changed), paired with the "before" print in
+   ! elmfates_interfaceMod.F90 (UpdateLitterFluxes). This one runs AFTER
+   ! SoilLittVertTransp has applied the accumulated source-sink term to the real
+   ! decomp_ppools_vr state, so together the two prints bracket one day's litter
+   ! influx against the metabolic-litter pool's actual before/after change -- see
+   ! A2MC use_cases/Kougarok/reports/20260809c_R1_p_litter_efflux_trace_and_diagnostic_proposal
+   ! sec 8. Gated on is_beg_curr_day() to match FATES's once-daily exchange cadence;
+   ! default .false. emits nothing.
+   if (use_p_litter_diag .and. is_beg_curr_day()) then
+      do fc = 1,num_soilc
+         c = filter_soilc(fc)
+         write(iulog,*) 'PDIAG day nstep=', get_nstep(), ' col=', c, &
+              ' met_lit_pool_gPm2_after=', &
+              sum(col_ps%decomp_ppools_vr(c,1:nlevdecomp,i_met_lit) * dzsoi_decomp(1:nlevdecomp))
+      end do
+   endif
+
    if(.not.use_fates)then
        call t_startf('CNGapMortality')
        call GapMortality( num_soilc, filter_soilc, num_soilp, filter_soilp,&

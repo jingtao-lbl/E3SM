@@ -60,6 +60,7 @@ module ELMFatesInterfaceMod
    use elm_varctl        , only : use_fates_lupft
    use elm_varctl        , only : use_fates_potentialveg
    use elm_varctl        , only : use_fates_daylength_factor
+   use elm_varctl        , only : use_p_litter_diag
    use elm_varctl        , only : fates_photosynth_acclimation
    use elm_varctl        , only : fates_stomatal_model
    use elm_varctl        , only : fates_stomatal_assimilation
@@ -122,7 +123,7 @@ module ELMFatesInterfaceMod
    use TopounitDataType  , only : top_as
    use ColumnType        , only : col_pp
    use ColumnDataType    , only : col_es, col_ws, col_wf, col_cs, col_cf
-   use ColumnDataType    , only : col_nf, col_pf
+   use ColumnDataType    , only : col_nf, col_pf, col_ps
    use VegetationDataType, only : veg_es, veg_wf, veg_ws, veg_ef
    use LandunitType      , only : lun_pp
 
@@ -1483,6 +1484,31 @@ contains
                  sum(this%fates(nc)%bc_out(s)%litt_flux_lab_p_si(1:nlevdecomp)*this%fates(nc)%bc_in(s)%dz_decomp_sisl(1:nlevdecomp)) + &
                  sum(this%fates(nc)%bc_out(s)%litt_flux_cel_p_si(1:nlevdecomp)*this%fates(nc)%bc_in(s)%dz_decomp_sisl(1:nlevdecomp)) + &
                  sum(this%fates(nc)%bc_out(s)%litt_flux_lig_p_si(1:nlevdecomp)*this%fates(nc)%bc_in(s)%dz_decomp_sisl(1:nlevdecomp))
+
+            ! Jing Tao (2026-08-09, branch exp/nbalance-and-p-litter-diag): read-only
+            ! daily diagnostic (no state changed) -- compares this day's FATES P
+            ! efflux into the METABOLIC litter pool (i_met_lit, the labile/labile-C
+            ! fraction only -- the dominant term, per plant_to_litter_pflux above
+            ! which sums all three) against that pool's own standing stock. Column
+            ! gross_pmin_vr (all cascade stages, not just i_met_lit) is printed for
+            ! same-timestep context; it is computed earlier in this timestep's pass
+            ! (SoilLittDecompAlloc/Alloc2), before this update, so it reflects the
+            ! PRIOR day, not this one -- see A2MC
+            ! use_cases/Kougarok/reports/20260809c_R1_p_litter_efflux_trace_and_diagnostic_proposal
+            ! sec 5 for why that lag matters. Gated on is_beg_curr_day() to match
+            ! FATES's own once-daily exchange cadence; default .false. emits nothing.
+            if (use_p_litter_diag .and. is_beg_curr_day()) then
+               write(iulog,*) 'PDIAG day nstep=', get_nstep(), ' col=', c, &
+                    ' p_efflux_to_met_lit_gPm2=', &
+                    sum(this%fates(nc)%bc_out(s)%litt_flux_lab_p_si(1:nlevdecomp) * &
+                        this%fates(nc)%bc_in(s)%dz_decomp_sisl(1:nlevdecomp)) * dtime, &
+                    ' met_lit_pool_gPm2_before=', &
+                    sum(col_ps%decomp_ppools_vr(c,1:nlevdecomp,i_met_lit) * &
+                        this%fates(nc)%bc_in(s)%dz_decomp_sisl(1:nlevdecomp)), &
+                    ' gross_pmin_col_gPm2_priorday=', &
+                    sum(col_pf%gross_pmin_vr(c,1:nlevdecomp) * &
+                        this%fates(nc)%bc_in(s)%dz_decomp_sisl(1:nlevdecomp)) * dtime
+            endif
 
             ! Transfer Nitrogen
             col_nf%decomp_npools_sourcesink(c,1:nlevdecomp,i_met_lit) = &

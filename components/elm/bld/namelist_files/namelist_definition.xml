@@ -145,6 +145,20 @@ BGC balance check tolerance
 Default 1.0e-7 hardwired
 </entry>
 
+<entry id="use_nbalance_ntrunc_fix" type="logical" category="elm_physics"
+       group="elm_inparm" valid_values="" >
+If TRUE, credit the mineral-N precision-control clip (PrecisionControlMod.F90)
+to ntrunc_vr before zeroing, instead of discarding it uncredited.
+Default FALSE reproduces current behaviour bit-for-bit.
+</entry>
+
+<entry id="use_p_litter_diag" type="logical" category="elm_physics"
+       group="elm_inparm" valid_values="" >
+If TRUE, emit a read-only daily diagnostic comparing the FATES phosphorus
+efflux into the metabolic litter pool against gross_pmin_vr and the pool
+state. No model state is changed. Default FALSE emits nothing.
+</entry>
+
 <entry id="startdate_add_temperature" type="char*8" category="elm_physics"
        group="elm_inparm" valid_values="" >
 Set date for beginning of adding temperature to atmospheric forcing
