@@ -84,6 +84,7 @@ module controlMod
                         use_atm_downscaling_to_topunit, precip_downscaling_method, &
                         fates_spitfire_mode, fates_harvest_mode, &
                         use_fates_planthydro, use_fates_ed_st3, use_fates_cohort_age_tracking, &
+                        use_fates_rootfinesfrag_fix, &
                         use_fates_ed_prescribed_phys, use_fates_inventory_init, &
                         fates_inventory_ctrl_filename, use_fates_fixed_biogeog, &
                         use_fates_nocomp, use_fates_sp, use_fates_luh, &
@@ -309,6 +310,7 @@ contains
           fates_spitfire_mode,                          &
           fates_harvest_mode,                           &
           use_fates_planthydro,                         &
+          use_fates_rootfinesfrag_fix,                  &
           use_fates_ed_st3,                             &
           use_fates_cohort_age_tracking,                &
           use_fates_ed_prescribed_phys,                 &
@@ -892,6 +894,7 @@ contains
     call mpi_bcast (fluh_timeseries, len(fluh_timeseries) , MPI_CHARACTER, 0, mpicom, ier)
     call mpi_bcast (flandusepftdat, len(flandusepftdat) , MPI_CHARACTER, 0, mpicom, ier)
     call mpi_bcast (use_fates_planthydro, 1, MPI_LOGICAL, 0, mpicom, ier)
+    call mpi_bcast (use_fates_rootfinesfrag_fix, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (use_fates_cohort_age_tracking, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (use_fates_ed_st3, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (use_fates_fixed_biogeog, 1, MPI_LOGICAL, 0, mpicom, ier)
@@ -1347,6 +1350,7 @@ contains
        write(iulog, *) '    fluh_timeseries = ', trim(fluh_timeseries)
        write(iulog, *) '    flandusepftdat = ', trim(flandusepftdat)
        write(iulog, *) '    use_fates_planthydro = ', use_fates_planthydro
+       write(iulog, *) '    use_fates_rootfinesfrag_fix = ', use_fates_rootfinesfrag_fix
        write(iulog, *) '    use_fates_tree_damage = ', use_fates_tree_damage
        write(iulog, *) '    use_fates_cohort_age_tracking = ',use_fates_cohort_age_tracking
        write(iulog, *) '    fates_parteh_mode = ', fates_parteh_mode

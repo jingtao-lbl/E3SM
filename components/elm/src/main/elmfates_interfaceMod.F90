@@ -49,6 +49,7 @@ module ELMFatesInterfaceMod
    use elm_varctl        , only : fates_parteh_mode
    use elm_varctl        , only : fates_seeddisp_cadence
    use elm_varctl        , only : use_fates_planthydro
+   use elm_varctl        , only : use_fates_rootfinesfrag_fix
    use elm_varctl        , only : use_fates_cohort_age_tracking
    use elm_varctl        , only : use_fates_ed_st3
    use elm_varctl        , only : use_fates_ed_prescribed_phys
@@ -423,6 +424,7 @@ contains
      integer                                        :: pass_ch4
      integer                                        :: pass_ed_prescribed_phys
      integer                                        :: pass_planthydro
+     integer                                        :: pass_rootfinesfrag_fix
      integer                                        :: pass_inventory_init
      integer                                        :: pass_is_restart
      integer                                        :: pass_cohort_age_tracking
@@ -614,6 +616,16 @@ contains
            pass_planthydro = 0
         end if
         call set_fates_ctrlparms('use_planthydro',ival=pass_planthydro)
+
+        ! !Jing Tao (2026-08-11, branch exp/rootfinesfrag-overwrite-fix): thread the
+        ! use_fates_rootfinesfrag_fix namelist switch to FATES, mirroring use_planthydro just above.
+        ! See elm_varctl.F90's declaration for the full mechanism this gates.
+        if(use_fates_rootfinesfrag_fix) then
+           pass_rootfinesfrag_fix = 1
+        else
+           pass_rootfinesfrag_fix = 0
+        end if
+        call set_fates_ctrlparms('use_rootfinesfrag_fix',ival=pass_rootfinesfrag_fix)
 
         if(use_fates_cohort_age_tracking) then
            pass_cohort_age_tracking = 1

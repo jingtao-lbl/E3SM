@@ -243,6 +243,20 @@ module elm_varctl
   logical, public            :: use_fates_tree_damage = .false.         ! true => turn on tree damage module
   logical, public            :: use_fates_ed_st3   = .false.            ! true => static stand structure
   logical, public            :: use_fates_ed_prescribed_phys = .false.  ! true => prescribed physiology
+  ! !Jing Tao (2026-08-11, branch exp/rootfinesfrag-overwrite-fix): candidate fix for the CWDOut
+  ! overwrite bug found in reports/20260811b_R1_p_mass_flow_tracing_and_supplementation_withdrawal
+  ! sec3h (A2MC repo) and memory/model_logs/20260811b_Root_Fines_Frag_Overwrite_Confirmed_JTVERIFY.md.
+  ! FATES's CWDOut (biogeochem/EDPhysiologyMod.F90) OVERWRITES litt%root_fines_frag with a
+  ! turnover-fragmentation-only value every day, silently erasing whatever EffluxIntoLitterPools
+  ! (biogeochem/FatesSoilBGCFluxMod.F90) had accumulated into the SAME array earlier that same day
+  ! (the plant's daily C/N/P efflux -- "unusable excess uptake returned to the soil", set in
+  ! parteh/PRTAllometricCNPMod.F90). Runtime-confirmed on job 56697842: root_fines_frag's P channel
+  ! collapses from ~631-681 gP/m2/yr (efflux, correctly written) to ~0.56-0.63 gP/m2/yr (turnover
+  ! only) every single day. Default OFF (V0-at-equality: reproduces today's numbers bit-for-bit).
+  ! When true, CWDOut accumulates into root_fines_frag instead of overwriting it -- safe because
+  ! ZeroLitterFluxes (main/EDMainMod.F90:198) zeros root_fines_frag exactly once per day, before
+  ! either writer runs, so there is no cross-day double-counting risk.
+  logical, public            :: use_fates_rootfinesfrag_fix = .false.
   logical, public            :: use_fates_inventory_init = .false.      ! true => initialize fates from inventory
   logical, public            :: use_fates_nocomp = .false.              ! true => no competition mode
   logical, public            :: use_fates_sp = .false.                  ! true => FATES satellite phenology mode
