@@ -243,6 +243,20 @@ module elm_varctl
   logical, public            :: use_fates_tree_damage = .false.         ! true => turn on tree damage module
   logical, public            :: use_fates_ed_st3   = .false.            ! true => static stand structure
   logical, public            :: use_fates_ed_prescribed_phys = .false.  ! true => prescribed physiology
+  ! !Jing Tao (2026-08-11, branch exp/rootfinesfrag-overwrite-fix): candidate fix for the CWDOut
+  ! overwrite bug found in reports/20260811b_R1_p_mass_flow_tracing_and_supplementation_withdrawal
+  ! sec3h (A2MC repo) and memory/model_logs/20260811b_Root_Fines_Frag_Overwrite_Confirmed_JTVERIFY.md.
+  ! FATES's CWDOut (biogeochem/EDPhysiologyMod.F90) OVERWRITES litt%root_fines_frag with a
+  ! turnover-fragmentation-only value every day, silently erasing whatever EffluxIntoLitterPools
+  ! (biogeochem/FatesSoilBGCFluxMod.F90) had accumulated into the SAME array earlier that same day
+  ! (the plant's daily C/N/P efflux -- "unusable excess uptake returned to the soil", set in
+  ! parteh/PRTAllometricCNPMod.F90). Runtime-confirmed on job 56697842: root_fines_frag's P channel
+  ! collapses from ~631-681 gP/m2/yr (efflux, correctly written) to ~0.56-0.63 gP/m2/yr (turnover
+  ! only) every single day. Default OFF (V0-at-equality: reproduces today's numbers bit-for-bit).
+  ! When true, CWDOut accumulates into root_fines_frag instead of overwriting it -- safe because
+  ! ZeroLitterFluxes (main/EDMainMod.F90:198) zeros root_fines_frag exactly once per day, before
+  ! either writer runs, so there is no cross-day double-counting risk.
+  logical, public            :: use_fates_rootfinesfrag_fix = .false.
   logical, public            :: use_fates_inventory_init = .false.      ! true => initialize fates from inventory
   logical, public            :: use_fates_nocomp = .false.              ! true => no competition mode
   logical, public            :: use_fates_sp = .false.                  ! true => FATES satellite phenology mode
@@ -463,6 +477,26 @@ module elm_varctl
   ! Priority of plant to get symbiotic N fixation, phosphatase
   logical, public :: NFIX_PTASE_plant = .false.
   !$acc declare create(NFIX_PTASE_plant)
+  !-----------------------------------------------------------------------
+  ! Jing Tao (2026-08-09, branch exp/nbalance-and-p-litter-diag): switch-gates the
+  ! PrecisionControlMod.F90 mineral-N clip fix. That clip silently discards small
+  ! negative smin_no3_vr/smin_nh4_vr without crediting ntrunc_vr, unlike the
+  ! decomposing-pool clip four lines above it in the same file, which does credit it
+  ! -- an uncompensated sink candidate for the R1 ColNBalanceCheck non-closure (A2MC
+  ! use_cases/Kougarok/reports/20260809b_R1_nbalance_ntrunc_clip_forensics_and_fix).
+  ! Default .false. reproduces current (buggy) behaviour bit-for-bit (V0-at-equality).
+  logical, public :: use_nbalance_ntrunc_fix = .false.
+  !$acc declare copyin(use_nbalance_ntrunc_fix)
+  !-----------------------------------------------------------------------
+  ! Jing Tao (2026-08-09, branch exp/nbalance-and-p-litter-diag): switch-gates a
+  ! read-only daily diagnostic (no state changed) comparing the FATES phosphorus
+  ! efflux entering the metabolic litter pool against gross_pmin_vr and the pool's
+  ! own state, to test whether the ~800-fold P-supplemented-spin-up litter gap (A2MC
+  ! use_cases/Kougarok/reports/20260809c_R1_p_litter_efflux_trace_and_diagnostic_proposal)
+  ! is a fast same-day round trip invisible at monthly output frequency. Default
+  ! .false. emits nothing.
+  logical, public :: use_p_litter_diag = .false.
+  !$acc declare copyin(use_p_litter_diag)
   !-----------------------------------------------------------------------
   !CO2 and warming experiments
   character(len=8), public :: startdate_add_temperature ='99991231'

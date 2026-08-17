@@ -47,6 +47,7 @@ module controlMod
   use elm_varctl, only: nu_com, use_dynroot, use_fan, fan_mode, fan_to_bgc_veg, &
                         use_var_soil_thick, use_lake_wat_storage, &
                         forest_fert_exp, ECA_Pconst_RGspin, NFIX_PTASE_plant, &
+                        use_nbalance_ntrunc_fix, use_p_litter_diag, &
                         use_pheno_flux_limiter, startdate_add_temperature, &
                         startdate_add_co2, add_temperature, add_co2, &
                         const_climate_hist, use_top_solar_rad, snow_shape, &
@@ -83,6 +84,7 @@ module controlMod
                         use_atm_downscaling_to_topunit, precip_downscaling_method, &
                         fates_spitfire_mode, fates_harvest_mode, &
                         use_fates_planthydro, use_fates_ed_st3, use_fates_cohort_age_tracking, &
+                        use_fates_rootfinesfrag_fix, &
                         use_fates_ed_prescribed_phys, use_fates_inventory_init, &
                         fates_inventory_ctrl_filename, use_fates_fixed_biogeog, &
                         use_fates_nocomp, use_fates_sp, use_fates_luh, &
@@ -229,6 +231,13 @@ contains
     namelist /elm_inparm/ &
          bgc_balance_check_tolerance
 
+    ! Jing Tao (2026-08-09, branch exp/nbalance-and-p-litter-diag): R1 nbalance/P
+    ! forensics switches, see A2MC use_cases/Kougarok/reports/20260809{b,c}_*.
+    namelist /elm_inparm/ &
+         use_nbalance_ntrunc_fix
+    namelist /elm_inparm/ &
+         use_p_litter_diag
+
     ! For experimental manipulations
     namelist /elm_inparm/ &
          startdate_add_temperature
@@ -301,6 +310,7 @@ contains
           fates_spitfire_mode,                          &
           fates_harvest_mode,                           &
           use_fates_planthydro,                         &
+          use_fates_rootfinesfrag_fix,                  &
           use_fates_ed_st3,                             &
           use_fates_cohort_age_tracking,                &
           use_fates_ed_prescribed_phys,                 &
@@ -864,6 +874,8 @@ contains
     call mpi_bcast (ECA_Pconst_RGspin, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (NFIX_PTASE_plant, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (bgc_balance_check_tolerance, 1, MPI_REAL8, 0, mpicom, ier)
+    call mpi_bcast (use_nbalance_ntrunc_fix, 1, MPI_LOGICAL, 0, mpicom, ier)
+    call mpi_bcast (use_p_litter_diag, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (use_pheno_flux_limiter, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (startdate_add_temperature, 1, MPI_CHARACTER, 0, mpicom, ier)
     call mpi_bcast (startdate_add_co2, 1, MPI_CHARACTER, 0, mpicom, ier)
@@ -882,6 +894,7 @@ contains
     call mpi_bcast (fluh_timeseries, len(fluh_timeseries) , MPI_CHARACTER, 0, mpicom, ier)
     call mpi_bcast (flandusepftdat, len(flandusepftdat) , MPI_CHARACTER, 0, mpicom, ier)
     call mpi_bcast (use_fates_planthydro, 1, MPI_LOGICAL, 0, mpicom, ier)
+    call mpi_bcast (use_fates_rootfinesfrag_fix, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (use_fates_cohort_age_tracking, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (use_fates_ed_st3, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (use_fates_fixed_biogeog, 1, MPI_LOGICAL, 0, mpicom, ier)
@@ -1337,6 +1350,7 @@ contains
        write(iulog, *) '    fluh_timeseries = ', trim(fluh_timeseries)
        write(iulog, *) '    flandusepftdat = ', trim(flandusepftdat)
        write(iulog, *) '    use_fates_planthydro = ', use_fates_planthydro
+       write(iulog, *) '    use_fates_rootfinesfrag_fix = ', use_fates_rootfinesfrag_fix
        write(iulog, *) '    use_fates_tree_damage = ', use_fates_tree_damage
        write(iulog, *) '    use_fates_cohort_age_tracking = ',use_fates_cohort_age_tracking
        write(iulog, *) '    fates_parteh_mode = ', fates_parteh_mode

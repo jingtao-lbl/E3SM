@@ -145,6 +145,20 @@ BGC balance check tolerance
 Default 1.0e-7 hardwired
 </entry>
 
+<entry id="use_nbalance_ntrunc_fix" type="logical" category="elm_physics"
+       group="elm_inparm" valid_values="" >
+If TRUE, credit the mineral-N precision-control clip (PrecisionControlMod.F90)
+to ntrunc_vr before zeroing, instead of discarding it uncredited.
+Default FALSE reproduces current behaviour bit-for-bit.
+</entry>
+
+<entry id="use_p_litter_diag" type="logical" category="elm_physics"
+       group="elm_inparm" valid_values="" >
+If TRUE, emit a read-only daily diagnostic comparing the FATES phosphorus
+efflux into the metabolic litter pool against gross_pmin_vr and the pool
+state. No model state is changed. Default FALSE emits nothing.
+</entry>
+
 <entry id="startdate_add_temperature" type="char*8" category="elm_physics"
        group="elm_inparm" valid_values="" >
 Set date for beginning of adding temperature to atmospheric forcing
@@ -429,6 +443,17 @@ If TRUE, enable FATES to utilize the day length factor from the host land model.
 <entry id="use_fates_planthydro" type="logical" category="physics"
         group="elm_inparm" valid_values="" value=".false.">
 Toggle to turn on plant hydraulics (only relevant if FATES is on).
+</entry>
+
+<entry id="use_fates_rootfinesfrag_fix" type="logical" category="physics"
+        group="elm_inparm" valid_values="" value=".false.">
+!Jing Tao (2026-08-11, branch exp/rootfinesfrag-overwrite-fix): candidate fix for a FATES litter-flux
+bug (only relevant if FATES is on). CWDOut (biogeochem/EDPhysiologyMod.F90) overwrites
+litt%root_fines_frag with a turnover-only value every day, silently discarding the plant C/N/P efflux
+EffluxIntoLitterPools had written into the same array earlier the same day. Default off reproduces
+today's (buggy) behavior bit-for-bit; true makes CWDOut accumulate into root_fines_frag instead of
+overwriting it. See A2MC reports/20260811b_R1_p_mass_flow_tracing_and_supplementation_withdrawal sec3h
+and memory/model_logs/20260811b_Root_Fines_Frag_Overwrite_Confirmed_JTVERIFY.md.
 </entry>
 
 <entry id="use_fates_tree_damage" type="logical" category="physics"

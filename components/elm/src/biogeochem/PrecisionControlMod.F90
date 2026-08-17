@@ -8,7 +8,7 @@ module PrecisionControlMod
   use shr_kind_mod        , only : r8 => shr_kind_r8
   use shr_log_mod         , only : errMsg => shr_log_errMsg
   use abortutils          , only : endrun
-  use elm_varctl          , only : nu_com
+  use elm_varctl          , only : nu_com, use_nbalance_ntrunc_fix
   use elm_varpar          , only : ndecomp_pools
   use ColumnType          , only : col_pp
   use ColumnDataType      , only : col_cs, c13_col_cs, c14_col_cs
@@ -620,6 +620,21 @@ contains
                if (abs(col_ns%smin_no3_vr(c,j)) < ncrit/1e4_r8) then
                   if ( col_ns%smin_no3_vr(c,j)  < 0._r8 ) then
 #ifndef _OPENACC
+                     ! Jing Tao (2026-08-09, branch exp/nbalance-and-p-litter-diag):
+                     ! credit the discarded negative mass to ntrunc_vr before zeroing,
+                     ! mirroring the decomposing-pool clip ~35 lines above (which DOES
+                     ! credit ntrunc_vr). The comment at the top of that block ("not
+                     ! doing precision control on soil mineral N, since it will be
+                     ! getting the N truncation flux anyway") says this should already
+                     ! happen for mineral N; it does not, without this fix. Candidate
+                     ! mechanism for the R1 ColNBalanceCheck non-closure -- see A2MC
+                     ! use_cases/Kougarok/reports/20260809b_R1_nbalance_ntrunc_clip_forensics_and_fix.
+                     ! Switch-gated, default .false. (V0-at-equality): with the switch
+                     ! off this branch is never taken and every other line here is
+                     ! byte-identical to before this edit.
+                     if (use_nbalance_ntrunc_fix) then
+                        col_ns%ntrunc_vr(c,j) = col_ns%ntrunc_vr(c,j) + col_ns%smin_no3_vr(c,j)
+                     endif
                      write(iulog, *) '-10^-12 < smin_no3 < 0. resetting to zero.'
                      write(iulog, *) 'smin_no3_vr_col(c,j), c, j: ', col_ns%smin_no3_vr(c,j), c, j
                      col_ns%smin_no3_vr(c,j) = 0._r8
@@ -629,6 +644,11 @@ contains
                if (abs(col_ns%smin_nh4_vr(c,j)) < ncrit/1e4_r8) then
                   if ( col_ns%smin_nh4_vr(c,j)  < 0._r8 ) then
 #ifndef _OPENACC
+                     ! Jing Tao (2026-08-09, branch exp/nbalance-and-p-litter-diag):
+                     ! same fix as the smin_no3 block immediately above, for ammonium.
+                     if (use_nbalance_ntrunc_fix) then
+                        col_ns%ntrunc_vr(c,j) = col_ns%ntrunc_vr(c,j) + col_ns%smin_nh4_vr(c,j)
+                     endif
                      write(iulog, *) '-10^-12 < smin_nh4 < 0. resetting to zero.'
                      write(iulog, *) 'smin_nh4_vr_col(c,j), c, j: ', col_ns%smin_nh4_vr(c,j), c, j
                      col_ns%smin_nh4_vr(c,j) = 0._r8
