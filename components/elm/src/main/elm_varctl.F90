@@ -464,6 +464,18 @@ module elm_varctl
   ! Priority of plant to get symbiotic N fixation, phosphatase
   logical, public :: NFIX_PTASE_plant = .false.
   !$acc declare create(NFIX_PTASE_plant)
+
+  ! Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): diagnostic for the plant N pool
+  ! going negative at AD-spinup cold start (PrecisionControlMod endruns on any
+  ! npool < 0, magnitudes 1.9e-7..2.7e-4 i.e. 19x-27000x ncrit=1e-8, so NOT
+  ! roundoff). When .true.: NitrogenStateUpdate1Mod dumps every npool source and
+  ! sink for the offending patch, and PrecisionControlMod clamps to zero and
+  ! continues instead of aborting, so the run reveals whether the deficit is a
+  ! cold-start transient (recovers) or a genuine leak (recurs/grows).
+  ! READ-ONLY DIAGNOSTIC + clamp: default .false., so a switch-off build is
+  ! byte-identical to upstream (V0-at-equality).
+  logical, public :: use_npool_diag = .false.
+  !$acc declare create(use_npool_diag)
   !-----------------------------------------------------------------------
   !CO2 and warming experiments
   character(len=8), public :: startdate_add_temperature ='99991231'

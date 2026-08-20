@@ -9,6 +9,7 @@ module PrecisionControlMod
   use shr_log_mod         , only : errMsg => shr_log_errMsg
   use abortutils          , only : endrun
   use elm_varctl          , only : nu_com
+  use elm_varctl          , only : use_npool_diag
   use elm_varpar          , only : ndecomp_pools
   use ColumnType          , only : col_pp
   use ColumnDataType      , only : col_cs, c13_col_cs, c14_col_cs
@@ -727,9 +728,20 @@ contains
                   call endrun(msg=errMsg(__FILE__, __LINE__))
                end if
                if (veg_ns%npool(p) < 0._r8) then
-                  write(iulog, *) 'error npool_patch is negative: ',p
-                  write(iulog, *) 'npool_patch: ', veg_ns%npool(p)
-                  call endrun(msg=errMsg(__FILE__, __LINE__))
+                  ! Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): under the diagnostic
+                  ! switch, credit the deficit to ntrunc-style bookkeeping by clamping to
+                  ! zero and CONTINUING, so a 1-year run shows whether the deficit is a
+                  ! cold-start transient or recurs/grows. Default .false. keeps the
+                  ! upstream endrun exactly (V0-at-equality). The clamp is a DIAGNOSTIC,
+                  ! not a fix: it hides non-closure and must not be shipped as one.
+                  if (use_npool_diag) then
+                     write(iulog, *) 'NPOOLCLAMP p=', p, ' npool=', veg_ns%npool(p)
+                     veg_ns%npool(p) = 0._r8
+                  else
+                     write(iulog, *) 'error npool_patch is negative: ',p
+                     write(iulog, *) 'npool_patch: ', veg_ns%npool(p)
+                     call endrun(msg=errMsg(__FILE__, __LINE__))
+                  end if
                end if
                if (veg_ps%retransp(p) < 0._r8) then
                   write(iulog, *) 'error retransp_patch is negative: ',p
