@@ -18,6 +18,8 @@ module PhosphorusStateUpdate1Mod
   ! bgc interface & pflotran:
   use elm_varctl             , only : use_pflotran, pf_cmode
   use elm_varctl             , only : nu_com
+  use elm_varctl             , only : use_nutrient_carbononly_fix
+  use elm_varctl             , only : carbon_only
   ! forest fertilization experiment
   use elm_time_manager       , only : get_curr_date
   use CNStateType            , only : fert_type , fert_continue, fert_dose, fert_start, fert_end
@@ -340,6 +342,22 @@ contains
                   veg_ps%grainp(p)             = veg_ps%grainp(p)             + veg_pf%ppool_to_grainp(p)*dt
                   veg_ps%ppool(p)              = veg_ps%ppool(p)              - veg_pf%ppool_to_grainp_storage(p)*dt
                   veg_ps%grainp_storage(p)     = veg_ps%grainp_storage(p)     + veg_pf%ppool_to_grainp_storage(p)*dt
+              end if
+
+              ! Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): carbon-only ppool solvency.
+              ! SYMMETRIC with the npool fix in NitrogenStateUpdate1Mod -- the P path in
+              ! AllocationMod has the identical defect: ppool_to_leafp is set from a
+              ! carbon-driven nlc at :4346, then the carbon_only supplement at :4481
+              ! computes (demand - draw) = 0, so supplement_to_plantp contributes nothing
+              ! and ppool goes negative by the shortfall. Verified empirically: with the
+              ! npool half of the fix only, the abort simply relocated from npool to
+              ! ppool (job 57318964, 70 ranks). Credit the shortfall to
+              ! supplement_to_plantp so the conjured P stays visible to the P balance
+              ! check. Switch-gated on the same flag, default .false.
+              if (use_nutrient_carbononly_fix .and. carbon_only .and. veg_ps%ppool(p) < 0._r8) then
+                 veg_pf%supplement_to_plantp(p) = veg_pf%supplement_to_plantp(p) &
+                                                - veg_ps%ppool(p) / dt
+                 veg_ps%ppool(p) = 0._r8
               end if
 
               ! move storage pools into transfer pools

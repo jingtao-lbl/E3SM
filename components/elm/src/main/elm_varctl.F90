@@ -486,8 +486,8 @@ module elm_varctl
   ! shortfall. This credits the real shortfall to supplement_to_plantn, the term the
   ! N balance check already treats as an external input, so mass balance stays
   ! explicit rather than being clamped away. Default .false. (V0-at-equality).
-  logical, public :: use_npool_carbononly_fix = .false.
-  !$acc declare create(use_npool_carbononly_fix)
+  logical, public :: use_nutrient_carbononly_fix = .false.
+  !$acc declare create(use_nutrient_carbononly_fix)
   !-----------------------------------------------------------------------
   !CO2 and warming experiments
   character(len=8), public :: startdate_add_temperature ='99991231'
