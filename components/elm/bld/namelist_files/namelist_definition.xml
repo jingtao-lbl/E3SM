@@ -148,6 +148,16 @@ npool to zero and continues (NPOOLCLAMP lines) instead of calling endrun. DIAGNO
 the clamp hides non-closure and must not be used for production. Default: .false.
 </entry>
 
+<entry id="use_npool_carbononly_fix" type="logical" category="elm_physics"
+       group="elm_inparm" valid_values="">
+Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): fix for the plant N pool going negative
+under AD-spinup carbon_only. AllocationMod does not N-limit nlc under carbon_only, so the
+npool draws are the full carbon-driven demand while the carbon_only supplement computes
+(demand - draw) = 0. When .true., the real shortfall is credited to supplement_to_plantn
+so the conjured N stays visible to the N balance check instead of being clamped away.
+Default: .false.
+</entry>
+
 <entry id="bgc_balance_check_tolerance" type="real" category="elm_physics"
        group="elm_inparm" valid_values="" >
 BGC balance check tolerance

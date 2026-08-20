@@ -476,6 +476,18 @@ module elm_varctl
   ! byte-identical to upstream (V0-at-equality).
   logical, public :: use_npool_diag = .false.
   !$acc declare create(use_npool_diag)
+
+  ! Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): fix for the carbon-only npool deficit.
+  ! Under AD spinup carbon_only, AllocationMod:4313 does NOT re-derive nlc from
+  ! plant_nalloc, so npool_to_* at :4316 are the full CARBON-driven N demand, not
+  ! N-limited. The carbon_only supplement at :4414 then computes (demand - draw),
+  ! which is ZERO because the draw already equals demand -- so the top-up meant to
+  ! keep the plant N pool solvent contributes nothing and npool goes negative by the
+  ! shortfall. This credits the real shortfall to supplement_to_plantn, the term the
+  ! N balance check already treats as an external input, so mass balance stays
+  ! explicit rather than being clamped away. Default .false. (V0-at-equality).
+  logical, public :: use_npool_carbononly_fix = .false.
+  !$acc declare create(use_npool_carbononly_fix)
   !-----------------------------------------------------------------------
   !CO2 and warming experiments
   character(len=8), public :: startdate_add_temperature ='99991231'

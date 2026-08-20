@@ -25,6 +25,8 @@ module NitrogenStateUpdate1Mod
   use CNStateType            , only : fert_type , fert_continue, fert_dose, fert_start, fert_end
   use elm_varctl             , only : forest_fert_exp
   use elm_varctl             , only : use_npool_diag
+  use elm_varctl             , only : use_npool_carbononly_fix
+  use elm_varctl             , only : carbon_only
   use elm_varctl             , only : nu_com
   use elm_varctl             , only : NFIX_PTASE_plant
   use decompMod              , only : bounds_type
@@ -403,6 +405,17 @@ contains
                       veg_nf%npool_to_frootn(p)*dt, veg_nf%npool_to_frootn_storage(p)*dt
                  write(iulog,'(A,E14.6,A,E14.6)') 'NPOOLDIAG   retransn=', veg_ns%retransn(p), &
                       ' leafn=', veg_ns%leafn(p)
+              end if
+
+              ! Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): carbon-only npool solvency.
+              ! See elm_varctl::use_npool_carbononly_fix for the mechanism. Credit the
+              ! shortfall to supplement_to_plantn (the designated external-N term that
+              ! ColNBalanceCheck already accounts for) rather than clamping npool, so the
+              ! conjured N remains visible to the balance check. Switch-gated, default off.
+              if (use_npool_carbononly_fix .and. carbon_only .and. veg_ns%npool(p) < 0._r8) then
+                 veg_nf%supplement_to_plantn(p) = veg_nf%supplement_to_plantn(p) &
+                                                - veg_ns%npool(p) / dt
+                 veg_ns%npool(p) = 0._r8
               end if
 
               ! move storage pools into transfer pools
