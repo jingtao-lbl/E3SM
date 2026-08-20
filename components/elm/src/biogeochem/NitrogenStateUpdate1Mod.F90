@@ -10,6 +10,7 @@ module NitrogenStateUpdate1Mod
   use elm_varctl             , only : iulog
   use elm_varcon             , only : nitrif_n2o_loss_frac
   use pftvarcon              , only : iscft
+  use pftvarcon              , only : noveg
   use VegetationPropertiesType         , only : veg_vp
   use CNDecompCascadeConType , only : decomp_cascade_con
   use CNStateType            , only : cnstate_type
@@ -413,6 +414,20 @@ contains
               ! ColNBalanceCheck already accounts for) rather than clamping npool, so the
               ! conjured N remains visible to the balance check. Switch-gated, default off.
               if (use_nutrient_carbononly_fix .and. carbon_only .and. veg_ns%npool(p) < 0._r8) then
+                 ! Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): evidence print for
+                 ! the residual balance error seen at nstep 6 (job 57320240). The
+                 ! balance check credits supplement only for active .and. itype/=noveg,
+                 ! while veg_?s_summary folds the pool into totveg? over filter_soilp
+                 ! with no such test. Log the patch metadata so the asymmetry can be
+                 ! confirmed or ruled out from data instead of inferred. Diagnostic
+                 ! only - gated on use_npool_diag, so default behaviour is unchanged.
+                 if (use_npool_diag) then
+                    write(iulog,'(A,I8,A,I8,A,I4,A,L2,A,E14.6,A,E14.6)') &
+                         'NFIXFIRE p=', p, ' c=', veg_pp%column(p), &
+                         ' itype=', veg_pp%itype(p), &
+                         ' active=', veg_pp%active(p), ' wtcol=', veg_pp%wtcol(p), &
+                         ' deficit=', veg_ns%npool(p)
+                 end if
                  veg_nf%supplement_to_plantn(p) = veg_nf%supplement_to_plantn(p) &
                                                 - veg_ns%npool(p) / dt
                  veg_ns%npool(p) = 0._r8
