@@ -31,6 +31,8 @@ module EcosystemBalanceCheckMod
   use elm_varctl          , only : forest_fert_exp
   use pftvarcon           , only: noveg
   use elm_varctl          , only : NFIX_PTASE_plant
+  use elm_varctl          , only : use_nfix_balance_fix
+  use AllocationMod       , only : nu_com_nfix
   use GridcellType        , only : grc_pp
   use GridcellDataType    , only : gridcell_carbon_state, gridcell_carbon_flux
   use GridcellDataType    , only : gridcell_nitrogen_state, gridcell_nitrogen_flux
@@ -429,7 +431,16 @@ contains
          else
 
             ! calculate total column-level inputs
-            if (NFIX_PTASE_plant) then
+            ! Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): nfix_to_ecosysn is populated ONLY by
+            ! NitrogenFixation_balance, which runs only when nu_com_nfix is .true.
+            ! (EcosystemDynMod). NFIX_PTASE_plant is forced .true. for every ECA run by
+            ! build-namelist, independently of nu_com_nfix, so the default ECA setup runs
+            ! NitrogenFixation() -- which sets nfix_to_sminn only -- while this check counts
+            ! nfix_to_ecosysn = 0. The fixed N still enters the store, so col_errnb equals
+            ! -nfix_to_sminn exactly (verified job 57326131: 3 columns, ratio 1.000 to 8 s.f.).
+            ! Requiring nu_com_nfix makes the check count the term the model actually produced.
+            ! Switch-gated, default .false. reproduces upstream bit-for-bit.
+            if (NFIX_PTASE_plant .and. ((.not. use_nfix_balance_fix) .or. nu_com_nfix)) then
                col_ninputs(c) = ndep_to_sminn(c) + nfix_to_ecosysn(c) + supplement_to_sminn(c)
             else
                col_ninputs(c) = ndep_to_sminn(c) + nfix_to_sminn(c) + supplement_to_sminn(c)

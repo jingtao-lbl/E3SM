@@ -148,6 +148,19 @@ npool to zero and continues (NPOOLCLAMP lines) instead of calling endrun. DIAGNO
 the clamp hides non-closure and must not be used for production. Default: .false.
 </entry>
 
+<entry id="use_nfix_balance_fix" type="logical" category="elm_physics"
+       group="elm_inparm" valid_values="">
+Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): fix a column N balance inconsistency in any
+default ECA configuration. ColNBalanceCheck picks its N-fixation input term on
+NFIX_PTASE_plant, which build-namelist forces .true. for every -nutrient_comp_pathway eca
+run. But which fixation routine actually runs is decided by nu_com_nfix, which defaults
+.false.; NitrogenFixation() then sets nfix_to_sminn only, and nfix_to_ecosysn stays at its
+per-timestep zeroed value. The balance check therefore counts zero fixation while the fixed
+N does enter the store, giving col_errnb == -nfix_to_sminn exactly. When .true., the input
+term is keyed on nu_com_nfix as well so the check counts what the model actually did.
+Default: .false.
+</entry>
+
 <entry id="use_nutrient_carbononly_fix" type="logical" category="elm_physics"
        group="elm_inparm" valid_values="">
 Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): fix for the plant N pool going negative

@@ -488,6 +488,18 @@ module elm_varctl
   ! explicit rather than being clamped away. Default .false. (V0-at-equality).
   logical, public :: use_nutrient_carbononly_fix = .false.
   !$acc declare create(use_nutrient_carbononly_fix)
+
+  ! Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): ColNBalanceCheck selects its N-fixation
+  ! input term on NFIX_PTASE_plant, but which fixation routine actually RAN is decided by
+  ! nu_com_nfix (EcosystemDynMod). build-namelist forces NFIX_PTASE_plant=.true. for every ECA
+  ! run while nu_com_nfix defaults .false., so NitrogenFixation() runs and sets nfix_to_sminn
+  ! only, leaving nfix_to_ecosysn at its per-timestep zeroed value -- yet the balance check
+  ! counts nfix_to_ecosysn. The fixed N still enters the store, so col_errnb == -nfix_to_sminn
+  ! exactly. Verified: job 57326131, 3 columns, ratio 1.000 to 8 significant figures.
+  ! When .true., key the input term on nu_com_nfix as well, so the check counts what the model
+  ! actually did. Switch-gated, default .false. (V0-at-equality).
+  logical, public :: use_nfix_balance_fix = .false.
+  !$acc declare create(use_nfix_balance_fix)
   !-----------------------------------------------------------------------
   !CO2 and warming experiments
   character(len=8), public :: startdate_add_temperature ='99991231'
