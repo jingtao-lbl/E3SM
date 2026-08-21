@@ -9859,6 +9859,23 @@ module VegetationDataType
                isnan(this%livestemn_to_litter(p)) .or. &
                isnan(this%leafn_to_litter(p)) .or. &
                isnan(this%frootn_to_litter(p))) then
+               ! Jing Tao (2026-08-21, branch e3sm_9b5a6a63d8): the upstream message says only
+               ! "NaN in litter N loss terms" and names none of the four, so it identifies neither
+               ! the offending term nor the patch. This abort ended a 124-year ADSP (job 57338974)
+               ! and the same abort ended an earlier run at year 9.4, so it needs to be diagnosable
+               ! on the first reproduction rather than the second.
+               ! NOT switch-gated: this executes immediately before an existing endrun, so the path
+               ! is already terminal and no science result can differ. Only the message changes.
+               ! NOTE sen_nloss_litter is TESTED here but ASSIGNED ~6 lines below, so the value
+               ! checked is the PREVIOUS timestep's -- relevant when locating the origin.
+               write(iulog,*) 'LITTERNAN p=', p, ' itype=', veg_pp%itype(p), &
+                    ' active=', veg_pp%active(p), ' wtcol=', veg_pp%wtcol(p)
+               write(iulog,*) 'LITTERNAN   sen_nloss_litter(prev step)=', this%sen_nloss_litter(p)
+               write(iulog,*) 'LITTERNAN   livestemn_to_litter=', this%livestemn_to_litter(p)
+               write(iulog,*) 'LITTERNAN   leafn_to_litter    =', this%leafn_to_litter(p)
+               write(iulog,*) 'LITTERNAN   frootn_to_litter   =', this%frootn_to_litter(p)
+               write(iulog,*) 'LITTERNAN   m_leafn_to_litter  =', this%m_leafn_to_litter(p)
+               write(iulog,*) 'LITTERNAN   m_frootn_to_litter =', this%m_frootn_to_litter(p)
                call endrun(msg = 'veg_nf_summary: NaN in litter N loss terms: '//errMsg(__FILE__, __LINE__))
           endif
          this%sen_nloss_litter(p) = &
