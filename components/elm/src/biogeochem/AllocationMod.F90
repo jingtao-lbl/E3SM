@@ -32,6 +32,7 @@ module AllocationMod
   ! bgc interface & pflotran module switches
   use elm_varctl          , only: use_elm_interface,use_elm_bgc, use_pflotran, pf_cmode
   use elm_varctl          , only : nu_com
+  use elm_varctl          , only : use_eca_solution_conc_fix
   use SoilStatetype       , only : soilstate_type
   use elm_varctl          , only : NFIX_PTASE_plant
   use ELMFatesInterfaceMod  , only : hlm_fates_interface_type
@@ -2640,7 +2641,18 @@ contains
        ! first need to convert concentration to per soil water based
        ! ---------------------------------------------------------------------------------
 
-       solution_conc = smin_no3_vr(j) / h2osoi_vol(j) ! convert to per soil water based
+       ! Jing Tao (2026-08-21, branch e3sm_9b5a6a63d8): the NH4 counterpart above divides by
+       ! (bd(j)*adsorp_nh4_eff*m3_per_liter + h2osoi_vol(j)), whose additive term is strictly
+       ! positive, so it cannot divide by zero. This NO3 line divides by h2osoi_vol(j) alone.
+       ! A layer holding neither liquid nor ice gives h2osoi_vol = 0 and hence NaN here, which
+       ! then propagates through plant_no3demand_vr, sminn_to_plant_patch, sminn_to_npool and
+       ! npool into leafn, and is only caught much later by the litter guard in veg_nf_summary.
+       ! With no water there is no solution-phase nutrient, so the concentration is zero.
+       if (use_eca_solution_conc_fix .and. .not. (h2osoi_vol(j) > 0._r8)) then
+          solution_conc = 0._r8      ! .not.(>0) also catches a NaN water content
+       else
+          solution_conc = smin_no3_vr(j) / h2osoi_vol(j) ! convert to per soil water based
+       end if
 
        e_km = 0._r8
        do i = 1, n_pcomp
@@ -2830,7 +2842,14 @@ contains
        ! plant, microbial decomposer, mineral surface compete for P
        ! loop over each pft within the same column
        ! calculate competition coefficients for N/P
-       solution_pconc  = max(0._r8,solutionp_vr(j)/h2osoi_vol(j)) ! convert to per soil water based
+       ! Jing Tao (2026-08-21, branch e3sm_9b5a6a63d8): same unguarded division as the NO3 path.
+       ! The max(0,...) clamps negatives but does not defend against a NaN produced by a zero
+       ! water content. Fixed identically and under the same switch.
+       if (use_eca_solution_conc_fix .and. .not. (h2osoi_vol(j) > 0._r8)) then
+          solution_pconc = 0._r8
+       else
+          solution_pconc  = max(0._r8,solutionp_vr(j)/h2osoi_vol(j)) ! convert to per soil water based
+       end if
 
        e_km_p = 0._r8
        do i = 1,n_pcomp

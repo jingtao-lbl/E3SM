@@ -500,6 +500,21 @@ module elm_varctl
   ! actually did. Switch-gated, default .false. (V0-at-equality).
   logical, public :: use_nfix_balance_fix = .false.
   !$acc declare create(use_nfix_balance_fix)
+
+  ! Jing Tao (2026-08-21, branch e3sm_9b5a6a63d8): ECA solution-phase concentration is
+  ! computed by dividing by soil water content. The NH4 path is safe by construction because
+  ! its denominator carries an additive adsorption term that is strictly positive:
+  !   solution_conc = smin_nh4_vr(j) / (bd(j)*adsorp_nh4_eff*m3_per_liter + h2osoi_vol(j))
+  ! The NO3 path (AllocationMod:2643) and the P path (:2833) divide by h2osoi_vol(j) alone,
+  ! with no guard. When a layer holds neither liquid nor ice, h2osoi_vol is zero and NO3 and P
+  ! produce NaN while NH4 stays finite. That NaN propagates
+  !   plant_no3demand_vr -> sminn_to_plant_patch -> sminn_to_npool -> npool -> leafn
+  ! and finally trips the litter guard in veg_nf_summary, many routines downstream. Diagnosed
+  ! from job 57376849: layer 1, boreal evergreen patch, NH4 terms all finite, NO3 terms all NaN.
+  ! With no water there is no solution-phase nutrient, so the concentration is zero, not
+  ! undefined. Switch-gated, default .false. reproduces upstream bit-for-bit.
+  logical, public :: use_eca_solution_conc_fix = .false.
+  !$acc declare create(use_eca_solution_conc_fix)
   !-----------------------------------------------------------------------
   !CO2 and warming experiments
   character(len=8), public :: startdate_add_temperature ='99991231'

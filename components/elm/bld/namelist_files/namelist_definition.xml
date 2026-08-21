@@ -148,6 +148,19 @@ npool to zero and continues (NPOOLCLAMP lines) instead of calling endrun. DIAGNO
 the clamp hides non-closure and must not be used for production. Default: .false.
 </entry>
 
+<entry id="use_eca_solution_conc_fix" type="logical" category="elm_physics"
+       group="elm_inparm" valid_values="">
+Jing Tao (2026-08-21, branch e3sm_9b5a6a63d8): guard the two unprotected divisions by soil
+water content in the ECA nutrient competition solver. The NH4 path divides by
+(bd*adsorp_nh4_eff*m3_per_liter + h2osoi_vol), whose additive term is strictly positive, so it
+is safe. The NO3 path (AllocationMod:2643) and the P path (:2833) divide by h2osoi_vol alone.
+A soil layer holding neither liquid nor ice gives h2osoi_vol = 0, so NO3 and P produce NaN
+while NH4 stays finite. The NaN propagates through plant_no3demand_vr, sminn_to_plant_patch,
+sminn_to_npool and npool into leafn, and surfaces only much later as a litter N NaN in
+veg_nf_summary. When .true., the solution-phase concentration is set to zero where there is no
+water, which is the physically correct value. Default: .false.
+</entry>
+
 <entry id="use_nfix_balance_fix" type="logical" category="elm_physics"
        group="elm_inparm" valid_values="">
 Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): fix a column N balance inconsistency in any
