@@ -9246,6 +9246,18 @@ module VegetationDataType
          avgflag='A', long_name='deployment of soil mineral N uptake', &
          ptr_patch=this%sminn_to_npool)
 
+    ! Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): supplement_to_plantn had no history
+    ! field, so there was no way to observe whether the carbon-only nutrient supplement
+    ! (use_nutrient_carbononly_fix) saturates or keeps growing over a spin-up. A supplement
+    ! that grows without bound is injecting increasing unphysical N and would invalidate the
+    ! AD-spinup result, so it must be observable before committing to a 520-year chain.
+    ! Registered default='inactive', so no existing output changes; request it with
+    ! hist_fincl1 = 'SUPPLEMENT_TO_PLANTN'.
+    this%supplement_to_plantn(begp:endp) = spval
+    call hist_addfld1d (fname='SUPPLEMENT_TO_PLANTN', units='gN/m^2/s', &
+         avgflag='A', long_name='supplementary N flux to plant (carbon-only solvency)', &
+         ptr_patch=this%supplement_to_plantn, default='inactive')
+
     this%npool_to_leafn(begp:endp) = spval
     call hist_addfld1d (fname='NPOOL_TO_LEAFN', units='gN/m^2/s', &
          avgflag='A', long_name='allocation to leaf N', &
@@ -10337,6 +10349,15 @@ module VegetationDataType
          ptr_patch=this%sminp_to_ppool)
 
     this%ppool_to_leafp(begp:endp) = spval
+    ! Jing Tao (2026-08-20, branch e3sm_9b5a6a63d8): P counterpart of SUPPLEMENT_TO_PLANTN.
+    ! The carbon-only solvency fix is symmetric across N and P (verified: 380 N and 380 P
+    ! firings in job 57326131), so both supplements must be observable to judge saturation.
+    ! Registered default='inactive'; request with hist_fincl1 = 'SUPPLEMENT_TO_PLANTP'.
+    this%supplement_to_plantp(begp:endp) = spval
+    call hist_addfld1d (fname='SUPPLEMENT_TO_PLANTP', units='gP/m^2/s', &
+         avgflag='A', long_name='supplementary P flux to plant (carbon-only solvency)', &
+         ptr_patch=this%supplement_to_plantp, default='inactive')
+
     call hist_addfld1d (fname='PPOOL_TO_LEAFP', units='gP/m^2/s', &
          avgflag='A', long_name='allocation to leaf P', &
          ptr_patch=this%ppool_to_leafp, default='inactive')
