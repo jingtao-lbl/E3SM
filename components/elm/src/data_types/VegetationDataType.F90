@@ -9881,6 +9881,23 @@ module VegetationDataType
                write(iulog,*) 'LITTERNAN frootn =', veg_ns%frootn(p)
                write(iulog,*) 'LITTERNAN leafc  =', veg_cs%leafc(p)
                write(iulog,*) 'LITTERNAN frootc =', veg_cs%frootc(p)
+               ! Carbon is healthy while N is NaN (leafc=129, leafn=NaN on patch 70016), so the
+               ! NaN entered through an N-specific inflow. Dump every N pool and inflow that
+               ! feeds leafn/frootn so the origin is pinned in ONE run rather than one variable
+               ! per 20-minute cycle. Note AllocationMod:3567 guards npool with max(npool,1e-15)
+               ! against ZERO but not against NaN, so a NaN npool propagates through r into
+               ! plant_nalloc -> npool_to_leafn -> leafn.
+               write(iulog,*) 'LITTERNAN npool  =', veg_ns%npool(p)
+               write(iulog,*) 'LITTERNAN retransn=', veg_ns%retransn(p)
+               write(iulog,*) 'LITTERNAN leafn_xfer =', veg_ns%leafn_xfer(p)
+               write(iulog,*) 'LITTERNAN frootn_xfer=', veg_ns%frootn_xfer(p)
+               write(iulog,*) 'LITTERNAN npool_to_leafn  =', this%npool_to_leafn(p)
+               write(iulog,*) 'LITTERNAN npool_to_frootn =', this%npool_to_frootn(p)
+               write(iulog,*) 'LITTERNAN leafn_xfer_to_leafn=', this%leafn_xfer_to_leafn(p)
+               write(iulog,*) 'LITTERNAN leafn_to_retransn  =', this%leafn_to_retransn(p)
+               write(iulog,*) 'LITTERNAN sminn_to_npool     =', this%sminn_to_npool(p)
+               write(iulog,*) 'LITTERNAN retransn_to_npool  =', this%retransn_to_npool(p)
+               write(iulog,*) 'LITTERNAN supplement_to_plantn=', this%supplement_to_plantn(p)
                write(iulog,*) 'LITTERNAN   sen_nloss_litter(prev step)=', this%sen_nloss_litter(p)
                write(iulog,*) 'LITTERNAN   livestemn_to_litter=', this%livestemn_to_litter(p)
                write(iulog,*) 'LITTERNAN   leafn_to_litter    =', this%leafn_to_litter(p)
