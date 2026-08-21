@@ -1900,6 +1900,36 @@ contains
                        plant_no3demand_vr_patch(p,j) = plant_no3demand_vr_patch(p,j)/veg_pp%wtcol(p)
                        plant_pdemand_vr_patch(p,j)   = plant_pdemand_vr_patch(p,j)/veg_pp%wtcol(p)
 
+                       ! Jing Tao (2026-08-21, branch e3sm_9b5a6a63d8): trap the FIRST NaN in the
+                       ! ECA uptake chain. Tracing from the veg_nf_summary litter guard established
+                       ! sminn_to_npool as the only NaN inflow to npool (job 57359151), and under ECA
+                       ! sminn_to_npool(p) = sminn_to_plant_patch(p) = smin_nh4_to_plant_patch +
+                       ! smin_no3_to_plant_patch, accumulated right here. Everything upstream is in
+                       ! scope only at this point, so report and stop here rather than several
+                       ! routines downstream where the original guard fires.
+                       ! Note the division above is by veg_pp%wtcol(p) with NO zero guard.
+                       ! Diagnostic only: it runs immediately before values that would otherwise
+                       ! propagate a NaN, and changes no result on a clean step.
+                       if (isnan(plant_nh4demand_vr_patch(p,j)) .or. &
+                           isnan(plant_no3demand_vr_patch(p,j)) .or. &
+                           isnan(fpg_nh4_vr(c,j)) .or. isnan(fpg_no3_vr(c,j))) then
+                          write(iulog,*) 'ECANAN col   =', c
+                          write(iulog,*) 'ECANAN patch =', p
+                          write(iulog,*) 'ECANAN layer =', j
+                          write(iulog,*) 'ECANAN itype =', veg_pp%itype(p)
+                          write(iulog,*) 'ECANAN wtcol =', veg_pp%wtcol(p)
+                          write(iulog,*) 'ECANAN nh4demand_vr_patch=', plant_nh4demand_vr_patch(p,j)
+                          write(iulog,*) 'ECANAN no3demand_vr_patch=', plant_no3demand_vr_patch(p,j)
+                          write(iulog,*) 'ECANAN fpg_nh4_vr        =', fpg_nh4_vr(c,j)
+                          write(iulog,*) 'ECANAN fpg_no3_vr        =', fpg_no3_vr(c,j)
+                          write(iulog,*) 'ECANAN col_nh4demand_vr  =', col_plant_nh4demand_vr(c,j)
+                          write(iulog,*) 'ECANAN col_no3demand_vr  =', col_plant_no3demand_vr(c,j)
+                          write(iulog,*) 'ECANAN smin_nh4_to_plant_vr=', smin_nh4_to_plant_vr(c,j)
+                          write(iulog,*) 'ECANAN smin_no3_to_plant_vr=', smin_no3_to_plant_vr(c,j)
+                          write(iulog,*) 'ECANAN cn_scalar         =', cn_scalar(p)
+                          call endrun(msg='ECA uptake NaN trap: '//errMsg(__FILE__, __LINE__))
+                       end if
+
                        smin_nh4_to_plant_patch(p) = smin_nh4_to_plant_patch(p) + &
                             plant_nh4demand_vr_patch(p,j) * fpg_nh4_vr(c,j)*dzsoi_decomp(j)
                        smin_no3_to_plant_patch(p) = smin_no3_to_plant_patch(p) + &
