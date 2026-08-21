@@ -9868,8 +9868,19 @@ module VegetationDataType
                ! is already terminal and no science result can differ. Only the message changes.
                ! NOTE sen_nloss_litter is TESTED here but ASSIGNED ~6 lines below, so the value
                ! checked is the PREVIOUS timestep's -- relevant when locating the origin.
-               write(iulog,*) 'LITTERNAN p=', p, ' itype=', veg_pp%itype(p), &
-                    ' active=', veg_pp%active(p), ' wtcol=', veg_pp%wtcol(p)
+               ! one value per line: the previous single-line form overran the record and
+               ! silently dropped wtcol, which was the value most needed.
+               write(iulog,*) 'LITTERNAN patch  =', p
+               write(iulog,*) 'LITTERNAN itype  =', veg_pp%itype(p)
+               write(iulog,*) 'LITTERNAN active =', veg_pp%active(p)
+               write(iulog,*) 'LITTERNAN wtcol  =', veg_pp%wtcol(p)
+               write(iulog,*) 'LITTERNAN wtgcell=', veg_pp%wtgcell(p)
+               ! the flux terms are products of these states; if the states are NaN the guard
+               ! is catching a symptom and the origin is upstream of litterfall entirely
+               write(iulog,*) 'LITTERNAN leafn  =', veg_ns%leafn(p)
+               write(iulog,*) 'LITTERNAN frootn =', veg_ns%frootn(p)
+               write(iulog,*) 'LITTERNAN leafc  =', veg_cs%leafc(p)
+               write(iulog,*) 'LITTERNAN frootc =', veg_cs%frootc(p)
                write(iulog,*) 'LITTERNAN   sen_nloss_litter(prev step)=', this%sen_nloss_litter(p)
                write(iulog,*) 'LITTERNAN   livestemn_to_litter=', this%livestemn_to_litter(p)
                write(iulog,*) 'LITTERNAN   leafn_to_litter    =', this%leafn_to_litter(p)
