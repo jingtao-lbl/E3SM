@@ -217,6 +217,27 @@ module elm_varctl
   ! ppool, so both halves are gated on this one switch.
   logical, public :: use_nutrient_carbononly_fix = .false.
   !$acc declare create(use_nutrient_carbononly_fix)
+
+  ! Jing Tao (2026-09-12, ported from fork branch e3sm_9b5a6a63d8, commit 4606227f31):
+  ! count the N-fixation term the model ACTUALLY produced in ColNBalanceCheck.
+  ! Two flags that must agree are set independently. Which N-fixation INPUT TERM the balance
+  ! check counts is chosen by NFIX_PTASE_plant, which ELMBuildNamelist forces .true. for every
+  ! -nutrient_comp_pathway eca run. Which fixation ROUTINE actually runs is decided by
+  ! nu_com_nfix (AllocationMod), which defaults .false. and which nothing sets. So the default
+  ! ECA setup runs NitrogenFixation(), setting nfix_to_sminn only and leaving nfix_to_ecosysn
+  ! at whatever the per-timestep flux zeroing left, while the check counts nfix_to_ecosysn.
+  ! The fixed N still enters the store, so the check reports exactly the term it failed to
+  ! count: col_errnb == -nfix_to_sminn.
+  ! Reproduced on this tree at Teller (job 58245018, 0001-05-23):
+  !   column nbalance error = -1.006212161022066E-007
+  !   nfix                  =  1.006212160287141E-007     ratio 1.000000001 (9 s.f.)
+  ! INDEPENDENT of use_nutrient_carbononly_fix: that fix touches npool and supplement_to_plantn,
+  ! neither of which appears in the identity above. It only lets the run survive to a timestep
+  ! where fixation is large enough to cross the absolute 1e-7 tolerance -- which is exactly the
+  ! sequence observed here, and the sequence the source branch documented.
+  ! Default .false. reproduces upstream bit-for-bit (V0-at-equality).
+  logical, public :: use_nfix_balance_fix = .false.
+  !$acc declare create(use_nfix_balance_fix)
   !$acc declare create(carbonnitrogen_only  )
   !$acc declare create(carbonphosphorus_only)
   !----------------------------------------------------------

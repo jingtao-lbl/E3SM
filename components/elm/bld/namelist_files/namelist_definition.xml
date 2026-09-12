@@ -147,6 +147,14 @@ abort in PrecisionControlMod. Only active while carbon_only is in force (AD spin
 Default FALSE, which reproduces upstream behaviour bit-for-bit.
 </entry>
 
+<entry id="use_nfix_balance_fix" type="logical" category="elm_physics"
+       group="elm_inparm" valid_values="" >
+If TRUE, ColNBalanceCheck counts nfix_to_ecosysn only when nu_com_nfix is also TRUE, i.e.
+only when the routine that populates that term actually runs; otherwise it counts
+nfix_to_sminn. Without this, a default ECA run counts a term the model never filled and the
+balance error equals the fixation flux exactly. Default FALSE reproduces upstream behaviour.
+</entry>
+
 <entry id="bgc_balance_check_tolerance" type="real" category="elm_physics"
        group="elm_inparm" valid_values="" >
 BGC balance check tolerance
