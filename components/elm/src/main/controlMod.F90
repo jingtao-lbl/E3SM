@@ -47,6 +47,7 @@ module controlMod
   use elm_varctl, only: nu_com, use_dynroot, use_fan, fan_mode, fan_to_bgc_veg, &
                         use_var_soil_thick, use_lake_wat_storage, &
                         forest_fert_exp, ECA_Pconst_RGspin, NFIX_PTASE_plant, &
+                        use_nutrient_carbononly_fix, &
                         use_nbalance_ntrunc_fix, use_p_litter_diag, &
                         use_pheno_flux_limiter, startdate_add_temperature, &
                         startdate_add_co2, add_temperature, add_co2, &
@@ -226,6 +227,10 @@ contains
          ECA_Pconst_RGspin
     namelist /elm_inparm/ &
          NFIX_PTASE_plant
+
+    ! Jing Tao (2026-09-12): carbon-only nutrient solvency fix, default off.
+    namelist /elm_inparm/ &
+         use_nutrient_carbononly_fix
 
     ! BGC balance check
     namelist /elm_inparm/ &
@@ -873,6 +878,8 @@ contains
     call mpi_bcast (forest_fert_exp, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (ECA_Pconst_RGspin, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (NFIX_PTASE_plant, 1, MPI_LOGICAL, 0, mpicom, ier)
+    ! Jing Tao (2026-09-12): carbon-only nutrient solvency fix, default off.
+    call mpi_bcast (use_nutrient_carbononly_fix, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (bgc_balance_check_tolerance, 1, MPI_REAL8, 0, mpicom, ier)
     call mpi_bcast (use_nbalance_ntrunc_fix, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (use_p_litter_diag, 1, MPI_LOGICAL, 0, mpicom, ier)

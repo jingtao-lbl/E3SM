@@ -193,6 +193,30 @@ module elm_varctl
   logical, public  :: carbonnitrogen_only
   logical, public  :: carbonphosphorus_only
   !$acc declare create(carbon_only          )
+
+  ! Jing Tao (2026-09-12, ported from fork branch e3sm_9b5a6a63d8, commits f879de28f9 +
+  ! 4db540c5da): fix for the carbon-only plant nutrient insolvency.
+  ! Mechanism: under AD spinup (spinup_state==1 and yr <= nyears_ad_carbon_only) ELM runs
+  ! carbon_only. AllocationMod re-derives nlc from plant_nalloc ONLY when .not. carbon_only,
+  ! so under carbon_only the npool_to_* draws stay the full CARBON-driven N demand rather
+  ! than the N-limited one. The carbon_only supplement block then computes
+  ! (cpool_to_leafc/cnl - npool_to_leafn), and with npool_to_leafn = (nlc/cnl)*fcur and
+  ! cpool_to_leafc = nlc*fcur those two terms are ALGEBRAICALLY IDENTICAL: the supplement is
+  ! a structural zero and the overwrite a no-op, while npool still pays the full draw. The
+  ! pool therefore goes negative by exactly the shortfall and PrecisionControlMod aborts on
+  ! it ("error npool_patch is negative"). Symmetric for phosphorus.
+  ! This switch credits the real shortfall to supplement_to_plantn / supplement_to_plantp --
+  ! the terms ColNBalanceCheck / ColPBalanceCheck already treat as external inputs -- and
+  ! zeroes the pool, so the conjured nutrient stays VISIBLE to the balance check instead of
+  ! being clamped away silently.
+  ! Units: veg_ns%npool is gN/m2 and supplement_to_plantn is gN/m2/s, hence the /dt.
+  ! Default .false. so a switch-off build reproduces upstream bit-for-bit (V0-at-equality).
+  ! Upstream verification on the source branch (paired ON/OFF, same commit): npool_patch
+  ! aborts 0 with the switch ON vs 70 with it OFF.
+  ! Follow-up: N-only is NOT sufficient -- with only the npool half the abort relocates to
+  ! ppool, so both halves are gated on this one switch.
+  logical, public :: use_nutrient_carbononly_fix = .false.
+  !$acc declare create(use_nutrient_carbononly_fix)
   !$acc declare create(carbonnitrogen_only  )
   !$acc declare create(carbonphosphorus_only)
   !----------------------------------------------------------

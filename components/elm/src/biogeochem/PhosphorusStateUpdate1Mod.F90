@@ -23,6 +23,9 @@ module PhosphorusStateUpdate1Mod
   use CNStateType            , only : fert_type , fert_continue, fert_dose, fert_start, fert_end
   use elm_varctl             , only : forest_fert_exp
   use elm_varctl             , only : NFIX_PTASE_plant
+  ! Jing Tao (2026-09-12): carbon-only nutrient solvency fix (see elm_varctl).
+  use elm_varctl             , only : use_nutrient_carbononly_fix
+  use elm_varctl             , only : carbon_only
   use decompMod              , only : bounds_type
   use elm_varcon             , only : dzsoi_decomp
   use elm_varctl             , only : use_fates
@@ -340,6 +343,24 @@ contains
                   veg_ps%grainp(p)             = veg_ps%grainp(p)             + veg_pf%ppool_to_grainp(p)*dt
                   veg_ps%ppool(p)              = veg_ps%ppool(p)              - veg_pf%ppool_to_grainp_storage(p)*dt
                   veg_ps%grainp_storage(p)     = veg_ps%grainp_storage(p)     + veg_pf%ppool_to_grainp_storage(p)*dt
+              end if
+
+
+              ! Jing Tao (2026-09-12, ported from fork branch e3sm_9b5a6a63d8): carbon-only
+              ! phosphorus solvency. Under AD-spinup carbon_only the ppool draws above are the full
+              ! CARBON-driven demand, while the carbon_only supplement in AllocationMod is a
+              ! structural zero (demand - draw, with draw == demand), so ppool finishes the
+              ! update negative and PrecisionControlMod aborts on it. Credit the shortfall to
+              ! supplement_to_plantp -- the term ColPBalanceCheck already counts as an
+              ! external input -- rather than clamping, so the conjured phosphorus stays visible to
+              ! the balance check. ppool is gP/m2 and supplement_to_plantp is gP/m2/s, hence /dt.
+              ! Switch-gated, default off (V0-at-equality).
+              ! Both halves are gated on the SAME switch on purpose: upstream verification
+              ! showed that with the nitrogen half alone the abort simply relocates to ppool.
+              if (use_nutrient_carbononly_fix .and. carbon_only .and. veg_ps%ppool(p) < 0._r8) then
+                 veg_pf%supplement_to_plantp(p) = veg_pf%supplement_to_plantp(p) &
+                                                - veg_ps%ppool(p) / dt
+                 veg_ps%ppool(p) = 0._r8
               end if
 
               ! move storage pools into transfer pools
