@@ -891,7 +891,14 @@ contains
       ! This involves to stages
       ! 1) allocate the vectors
       ! 2) add the history variables defined in clm_inst to the history machinery
-      call param_derived%Init( numpft_fates )
+      !Jing Tao (2026-09-12, ELM-FATES-ECA_Kougarok / Knox dynamic-vmax-l2fr-opt):
+      ! argument DROPPED for this checkout only. Our FATES declares Init(this,numpft);
+      ! Knox's branch declares Init(this) and derives numpft internally from
+      ! size(vcmax25top,dim=2) in FatesParameterDerivedMod, then calls InitAllocate and
+      ! InitDamageTransitions itself. Passing numpft_fates therefore over-supplies the
+      ! call (ifx error 6784). No behavioural change: the value Knox derives is the same
+      ! PFT count. REVERT this line if this checkout is ever repointed at our own FATES.
+      call param_derived%Init()
 
       ! Initialize dispersal
       if (fates_seeddisp_cadence /= fates_dispersal_cadence_none) then
