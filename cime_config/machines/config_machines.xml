@@ -226,6 +226,14 @@
       <modules compiler="intel">
         <command name="load">PrgEnv-intel/8.6.0</command>
         <command name="load">intel/2025.3</command>
+        <!--Jing Tao: re-pin libsci AFTER PrgEnv-intel. PrgEnv-intel leaves the SYSTEM
+            DEFAULT libsci loaded (26.03.0, built against cray-mpich 9.1.0) while this
+            file pins cray-mpich/9.0.1 further down, so libsci_intel_mpi.so cannot resolve
+            MPI_Comm_f2c / MPI_Comm_c2f and MCT configure dies with "linking to Fortran
+            libraries from C fails". The gnu, nvidia and amdclang blocks above/below all
+            re-pin here; intel was the only one that did not. Same omission exists in
+            muller-cpu, alvarez-cpu and chicoma-cpu (untested, not changed). 2026-09-12-->
+        <command name="load">cray-libsci/25.09.0</command>
       </modules>
 
       <modules compiler="nvidia">
