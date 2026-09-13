@@ -1111,6 +1111,13 @@ contains
    real(r8), pointer :: plant_pdemand_vr_ptr(:,:)
    real(r8), pointer :: km_p_ptr(:), km_nh4_ptr(:), km_no3_ptr(:)
    real(r8), pointer :: vmax_p_ptr(:), vmax_nh4_ptr(:), vmax_no3_ptr(:)
+   !Jing Tao: dynamic-vmax port. Selects how the ECA kernels index vmax_*_ptr.
+   !.false. = legacy: vmax is per-PFT, indexed by ft_index(ip). Native ELM big-leaf,
+   !          and stock FATES where vmax arrived via bc_pconst.
+   !.true.  = Knox dynamic vmax: per-COMPETITOR, indexed by ip directly.
+   !km_* remains per-PFT in BOTH cases (Knox did not make km dynamic), which is exactly
+   !why ft_index cannot be repurposed and a separate selector is required.
+   logical :: vmax_is_percomp
    real(r8), parameter :: cn_stoich_var=0.2    ! variability of CN ratio
    real(r8), parameter :: cp_stoich_var=0.4    ! variability of CP ratio
    real(r8) :: sum1,sum2,sum_immob_no3,sum_immob_nh4,sum_immob_p,sum_pot_immob_p
@@ -1299,15 +1306,24 @@ contains
                  do f = 1,n_pcomp
                     ft = elm_fates%fates(ci)%bc_out(s)%ft_index(f)
 
+                    !Jing Tao: dynamic-vmax port (Knox rgknox/dynamic-vmax-l2fr-opt).
+                    !Vmax moved from a STATIC per-PFT constant bc_pconst%vmax_{nh4,no3,p}(ft),
+                    !read once from the parameter file, to a per-COMPETITOR time-varying
+                    !boundary condition bc_out%vmax_{nh4,no3,po4}(f) refilled every step in
+                    !FatesSoilBGCFluxMod.F90:543-545 from ccohort%vmax_*. Note the P RENAME:
+                    !vmax_p -> vmax_po4. Index f is the same competitor counter that fills
+                    !bc_out%ft_index and bc_out%veg_rootc (one icomp loop), so it is index-safe.
+                    !Units unchanged: N gN/gC/s, P gP/gC/s -- arithmetic below is untouched.
+
                     ! [gN/m3/s] = [gC/m3] * [gN/gC/s]
                     col_plant_ndemand_vr(c,j) = col_plant_ndemand_vr(c,j) + &
                          elm_fates%fates(ci)%bc_out(s)%veg_rootc(f,j) * &
-                         (elm_fates%fates(ci)%bc_pconst%vmax_nh4(ft) + &
-                          elm_fates%fates(ci)%bc_pconst%vmax_no3(ft))
+                         (elm_fates%fates(ci)%bc_out(s)%vmax_nh4(f) + &
+                          elm_fates%fates(ci)%bc_out(s)%vmax_no3(f))
 
                     col_plant_pdemand_vr(c,j) = col_plant_pdemand_vr(c,j) + &
                          elm_fates%fates(ci)%bc_out(s)%veg_rootc(f,j) * &
-                         elm_fates%fates(ci)%bc_pconst%vmax_p(ft)
+                         elm_fates%fates(ci)%bc_out(s)%vmax_po4(f)
                  end do
 
                  ! [gN/m2/s]
@@ -1464,10 +1480,13 @@ contains
               cn_scalar_runmean_ptr  => elm_fates%fates(ci)%bc_out(s)%cn_scalar  ! This is 1.0
               plant_nh4demand_vr_ptr => plant_nh4demand_vr_fates
               km_nh4_ptr             => elm_fates%fates(ci)%bc_pconst%eca_km_nh4
-              vmax_nh4_ptr           => elm_fates%fates(ci)%bc_pconst%vmax_nh4
+              !Jing Tao: dynamic-vmax port -- vmax is now a per-competitor bc_out array
+              !(gN/gC/s); km stays a per-PFT bc_pconst array. See vmax_is_percomp.
+              vmax_nh4_ptr           => elm_fates%fates(ci)%bc_out(s)%vmax_nh4
               plant_no3demand_vr_ptr => plant_no3demand_vr_fates
               km_no3_ptr             => elm_fates%fates(ci)%bc_pconst%eca_km_no3
-              vmax_no3_ptr           => elm_fates%fates(ci)%bc_pconst%vmax_no3
+              vmax_no3_ptr           => elm_fates%fates(ci)%bc_out(s)%vmax_no3
+              vmax_is_percomp        = .true.
               do f = 1, n_pcomp
                  filter_pcomp(f) = f
               end do
@@ -1484,6 +1503,7 @@ contains
               cn_scalar_runmean_ptr => cn_scalar_runmean
               km_no3_ptr   => km_plant_no3
               vmax_no3_ptr => vmax_plant_no3
+              vmax_is_percomp = .false.   !Jing Tao: native big-leaf -- vmax stays per-PFT
               plant_no3demand_vr_ptr => plant_no3demand_vr_patch
               plant_nh4demand_vr_ptr => plant_nh4demand_vr_patch
               f = 0
@@ -1515,6 +1535,7 @@ contains
                                    nu_com,                            & ! IN
                                    km_nh4_ptr,                        & ! IN
                                    vmax_nh4_ptr,                      & ! IN
+                                   vmax_is_percomp,                   & ! IN
                                    km_decomp_nh4,                     & ! IN
                                    potential_immob_vr(c,:),           & ! IN
                                    plant_nh4demand_vr_ptr(pci:pcf,:), & ! INOUT
@@ -1628,7 +1649,10 @@ contains
               cp_scalar_runmean_ptr  => elm_fates%fates(ci)%bc_out(s)%cp_scalar  ! This is 1.0
               plant_pdemand_vr_ptr   => plant_pdemand_vr_fates
               km_p_ptr               => elm_fates%fates(ci)%bc_pconst%eca_km_p
-              vmax_p_ptr             => elm_fates%fates(ci)%bc_pconst%vmax_p
+              !Jing Tao: dynamic-vmax port, P side. NOTE THE RENAME vmax_p -> vmax_po4:
+              !Knox's per-competitor phosphate array is bc_out%vmax_po4 (gP/gC/s).
+              vmax_p_ptr             => elm_fates%fates(ci)%bc_out(s)%vmax_po4
+              vmax_is_percomp        = .true.
               do f = 1, n_pcomp
                  filter_pcomp(f) = f
               end do
@@ -1642,6 +1666,7 @@ contains
               cp_scalar_runmean_ptr => cp_scalar_runmean
               km_p_ptr      => km_plant_p
               vmax_p_ptr    => vmax_plant_p
+              vmax_is_percomp = .false.   !Jing Tao: native big-leaf -- vmax stays per-PFT
               f = 0
               do p = pci, pcf
                  if (veg_pp%active(p).and. (veg_pp%itype(p) .ne. noveg)) then
@@ -1674,6 +1699,7 @@ contains
                 cp_scalar_runmean_ptr(pci:pcf),     & ! IN
                 km_p_ptr(:),                        & ! IN
                 vmax_p_ptr(:),                      & ! IN
+                vmax_is_percomp,                    & ! IN
                 km_decomp_p,                        & ! IN
                 labilep_vr(c,:),                    & ! IN
                 plant_pdemand_vr_ptr(pci:pcf,:),    & ! INOUT
@@ -2031,8 +2057,11 @@ contains
                     ! [gN/m2/s]
                     ndemand=0._r8
                     do j = 1,nlevdecomp
+                       !Jing Tao: dynamic-vmax port -- per-competitor bc_out%vmax_{nh4,no3}(f)
+                       !replaces static per-PFT bc_pconst%vmax_{nh4,no3}(ft). Rationale in the
+                       !banner comment at the col_plant_ndemand_vr accumulation above.
                        ndemand = ndemand + elm_fates%fates(ci)%bc_out(s)%veg_rootc(f,j) * &
-                            (elm_fates%fates(ci)%bc_pconst%vmax_nh4(ft)+elm_fates%fates(ci)%bc_pconst%vmax_no3(ft)) * &
+                            (elm_fates%fates(ci)%bc_out(s)%vmax_nh4(f)+elm_fates%fates(ci)%bc_out(s)%vmax_no3(f)) * &
                             dzsoi_decomp(j)
                     end do
 
@@ -2060,8 +2089,10 @@ contains
                   pdemand=0._r8
                   do j = 1,nlevdecomp
                      ! [gP/m2/s]
+                     !Jing Tao: dynamic-vmax port, P side -- bc_out%vmax_po4(f) (note the
+                     !vmax_p -> vmax_po4 rename) replaces static per-PFT bc_pconst%vmax_p(ft).
                      pdemand = pdemand+elm_fates%fates(ci)%bc_out(s)%veg_rootc(f,j) * &
-                          elm_fates%fates(ci)%bc_pconst%vmax_p(ft) * &
+                          elm_fates%fates(ci)%bc_out(s)%vmax_po4(f) * &
                           dzsoi_decomp(j)
                   end do
 
@@ -2400,7 +2431,8 @@ contains
        smin_nh4_vr,            & ! IN (j)
        nu_com,                 & ! IN
        km_nh4_plant,           & ! IN (pft)
-       vmax_nh4_plant,         & ! IN (pft)
+       vmax_nh4_plant,         & ! IN (pft) or (icomp) -- see vmax_per_comp
+       vmax_per_comp,          & ! IN
        km_decomp_nh4,          & ! IN
        potential_immob_vr,     & ! IN (j)
        plant_nh4demand_vr,     & ! INOUT (i,j)
@@ -2447,6 +2479,14 @@ contains
     real(r8), intent(in)  :: smin_nh4_vr(:)            ! minearlized nh4 in soil [g m-3]
     real(r8), intent(in)  :: km_nh4_plant(:)           ! km for plant type uptake
     real(r8), intent(in)  :: vmax_nh4_plant(:)         ! vmax for plant uptake
+    !Jing Tao: dynamic-vmax port. .true. => vmax_*_plant is indexed by the COMPETITOR
+    !index ip (Knox's per-competitor bc_out%vmax_*); .false. => by the PFT index ft
+    !(legacy per-PFT array). km_*_plant stays per-PFT in BOTH cases and is unaffected.
+    !NB the selection below is an IF, not MERGE: merge() evaluates BOTH arguments, and on
+    !the native big-leaf path ip is a PATCH index that would read vmax_*_plant out of
+    !bounds even though the result is discarded.
+    logical, intent(in) :: vmax_per_comp
+    real(r8) :: vmx_sel        ! vmax for this competitor, after index selection
     real(r8), intent(in)  :: km_decomp_nh4             ! km for microbial decomposer nh4 uptake
     real(r8), intent(in)  :: potential_immob_vr(:)     ! potential N immobilization [g/m3/s]
     real(r8), intent(inout) :: plant_nh4demand_vr(pci:,:) ! [g m-3 s-1] (m2 of col, not patch)
@@ -2537,7 +2577,13 @@ contains
 
           ! This is the demand per m3 of the column (not patch)
           ! (for native ELM divide through by the patch weight to get per m3 of patch)
-          plant_nh4demand_vr(ip,j) = max(0._r8,vmax_nh4_plant(ft) * veg_rootc(ip,j) * &
+          !Jing Tao: dynamic-vmax port -- select the index convention.
+          if (vmax_per_comp) then
+             vmx_sel = vmax_nh4_plant(ip)   ! per-competitor (Knox dynamic vmax)
+          else
+             vmx_sel = vmax_nh4_plant(ft)   ! legacy per-PFT
+          end if
+          plant_nh4demand_vr(ip,j) = max(0._r8,vmx_sel * veg_rootc(ip,j) * &
                cn_scalar_runmean(ip) * t_scalar(j) *  compet_plant(i))
 
           ! This is the total demand across all plant competitors
@@ -2642,7 +2688,13 @@ contains
 
           ! This is the demand per m3 of the column (not patch)
           ! (for native ELM divide through by the patch weight to get per m3 of patch)
-          plant_no3demand_vr(ip,j) = max(0._r8,vmax_no3_plant(ft) * veg_rootc(ip,j) * &
+          !Jing Tao: dynamic-vmax port -- select the index convention.
+          if (vmax_per_comp) then
+             vmx_sel = vmax_no3_plant(ip)   ! per-competitor (Knox dynamic vmax)
+          else
+             vmx_sel = vmax_no3_plant(ft)   ! legacy per-PFT
+          end if
+          plant_no3demand_vr(ip,j) = max(0._r8,vmx_sel * veg_rootc(ip,j) * &
                cn_scalar_runmean(ip) * t_scalar(j) *  compet_plant(i))
 
           ! This is the total demand across all plant competitors  (weighted in native, because
@@ -2728,7 +2780,8 @@ contains
        decompmicc, &
        cp_scalar_runmean,  &
        km_plant_p, &
-       vmax_plant_p, &
+       vmax_plant_p, &   ! (pft) or (icomp) -- see vmax_per_comp
+       vmax_per_comp, &
        km_decomp_p,  &
        labilep_vr, &
        plant_pdemand_vr_patch, &
@@ -2764,6 +2817,14 @@ contains
     real(r8), intent(in) :: cp_scalar_runmean(pci:)
     real(r8), intent(in) :: km_plant_p(:)
     real(r8), intent(in) :: vmax_plant_p(:)
+    !Jing Tao: dynamic-vmax port. .true. => vmax_*_plant is indexed by the COMPETITOR
+    !index ip (Knox's per-competitor bc_out%vmax_*); .false. => by the PFT index ft
+    !(legacy per-PFT array). km_*_plant stays per-PFT in BOTH cases and is unaffected.
+    !NB the selection below is an IF, not MERGE: merge() evaluates BOTH arguments, and on
+    !the native big-leaf path ip is a PATCH index that would read vmax_*_plant out of
+    !bounds even though the result is discarded.
+    logical, intent(in) :: vmax_per_comp
+    real(r8) :: vmx_sel        ! vmax for this competitor, after index selection
     real(r8), intent(in) :: km_decomp_p
     real(r8), intent(in) :: labilep_vr(:)
 
@@ -2829,7 +2890,13 @@ contains
        do i = 1,n_pcomp
           ip = filter_pcomp(i)
           ft = ft_index(ip)
-          plant_pdemand_vr_patch(ip,j) = max(0._r8,vmax_plant_p(ft) * veg_rootc(ip,j) * &
+          !Jing Tao: dynamic-vmax port -- select the index convention.
+          if (vmax_per_comp) then
+             vmx_sel = vmax_plant_p(ip)   ! per-competitor (Knox dynamic vmax)
+          else
+             vmx_sel = vmax_plant_p(ft)   ! legacy per-PFT
+          end if
+          plant_pdemand_vr_patch(ip,j) = max(0._r8,vmx_sel * veg_rootc(ip,j) * &
                cp_scalar_runmean(ip) * t_scalar(j) * compet_plant(i))
           col_plant_pdemand_vr(j) = col_plant_pdemand_vr(j) + plant_pdemand_vr_patch(ip,j)
        end do
