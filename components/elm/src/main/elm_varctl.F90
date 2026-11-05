@@ -473,6 +473,15 @@ module elm_varctl
   ! as an input. Default .false. leaves the upstream behavior unchanged.
   logical, public :: use_nutrient_carbononly_fix = .false.
   !$acc declare create(use_nutrient_carbononly_fix)
+
+  ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): ColNBalanceCheck counts
+  ! nfix_to_ecosysn whenever NFIX_PTASE_plant is set, but that flux is produced only when
+  ! nu_com_nfix is .true.; EvaluateSupplStatus sets nu_com_nfix to .false. while carbon_only
+  ! is set, and NitrogenFixation then fills nfix_to_sminn instead. When .true., the check
+  ! counts nfix_to_ecosysn only if nu_com_nfix is also .true. Accounting only. Default
+  ! .false. leaves the upstream behavior unchanged.
+  logical, public :: use_nfix_balance_fix = .false.
+  !$acc declare create(use_nfix_balance_fix)
   !-----------------------------------------------------------------------
   !CO2 and warming experiments
   character(len=8), public :: startdate_add_temperature ='99991231'

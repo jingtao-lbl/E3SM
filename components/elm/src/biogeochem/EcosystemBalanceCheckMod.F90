@@ -31,6 +31,8 @@ module EcosystemBalanceCheckMod
   use elm_varctl          , only : forest_fert_exp
   use pftvarcon           , only: noveg
   use elm_varctl          , only : NFIX_PTASE_plant
+  use elm_varctl          , only : use_nfix_balance_fix
+  use AllocationMod       , only : nu_com_nfix
   use GridcellType        , only : grc_pp
   use GridcellDataType    , only : gridcell_carbon_state, gridcell_carbon_flux
   use GridcellDataType    , only : gridcell_nitrogen_state, gridcell_nitrogen_flux
@@ -429,7 +431,13 @@ contains
          else
 
             ! calculate total column-level inputs
-            if (NFIX_PTASE_plant) then
+            ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): nfix_to_ecosysn is
+            ! produced only by NitrogenFixation_balance, which runs only when nu_com_nfix is
+            ! .true. (EcosystemDynMod). EvaluateSupplStatus sets nu_com_nfix to .false.
+            ! while carbon_only is set, and NitrogenFixation then fills nfix_to_sminn
+            ! instead. With use_nfix_balance_fix, count nfix_to_ecosysn only when
+            ! nu_com_nfix is .true., so the check counts the flux that was produced.
+            if (NFIX_PTASE_plant .and. ((.not. use_nfix_balance_fix) .or. nu_com_nfix)) then
                col_ninputs(c) = ndep_to_sminn(c) + nfix_to_ecosysn(c) + supplement_to_sminn(c)
             else
                col_ninputs(c) = ndep_to_sminn(c) + nfix_to_sminn(c) + supplement_to_sminn(c)

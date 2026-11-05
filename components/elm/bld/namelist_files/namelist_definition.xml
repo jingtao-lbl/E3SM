@@ -139,6 +139,20 @@ If TRUE consider priority of plant to get a fraction of
 symbiotic N fixation and P phosphatase
 </entry>
 
+<entry id="use_nfix_balance_fix" type="logical" category="elm_physics"
+       group="elm_inparm" valid_values="">
+Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): make ColNBalanceCheck count the
+N fixation the model actually produced. The check counts nfix_to_ecosysn whenever
+NFIX_PTASE_plant is .true., which build-namelist sets for every ECA run, but nfix_to_ecosysn
+is written only by NitrogenFixation_balance, which runs only when nu_com_nfix is .true.
+EvaluateSupplStatus sets nu_com_nfix to .true. for ECA and back to .false. while carbon_only
+is set, so in the carbon-only years of an AD spin-up, and for all of it with suplnitro =
+suplphos = 'ALL', NitrogenFixation runs instead and fills only nfix_to_sminn. The check then
+misses the fixed N and reports an error of minus nfix_to_sminn*dt. When .true., the check
+counts nfix_to_ecosysn only if nu_com_nfix is also .true., and nfix_to_sminn otherwise. Only
+the balance accounting changes. Default: .false.
+</entry>
+
 <entry id="use_nutrient_carbononly_fix" type="logical" category="elm_physics"
        group="elm_inparm" valid_values="">
 Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): keep the plant N and P pools
