@@ -9855,6 +9855,39 @@ module VegetationDataType
                isnan(this%livestemn_to_litter(p)) .or. &
                isnan(this%leafn_to_litter(p)) .or. &
                isnan(this%frootn_to_litter(p))) then
+               ! Jing Tao (2026-08-21, branch snowtorain-panarctic-archive): diagnostic. The
+               ! abort below does not say which term or patch is NaN, so first print the
+               ! patch, its vegetation state, and every N pool and flux that feeds its leaf
+               ! and fine-root N. Not switch-gated: this runs only immediately before the
+               ! existing abort, so no result can change. sen_nloss_litter is tested above
+               ! but assigned later in this routine, so the value printed is the previous
+               ! step's.
+               write(iulog,*) 'LITTERNAN patch  =', p
+               write(iulog,*) 'LITTERNAN itype  =', veg_pp%itype(p)
+               write(iulog,*) 'LITTERNAN active =', veg_pp%active(p)
+               write(iulog,*) 'LITTERNAN wtcol  =', veg_pp%wtcol(p)
+               write(iulog,*) 'LITTERNAN wtgcell=', veg_pp%wtgcell(p)
+               write(iulog,*) 'LITTERNAN leafn  =', veg_ns%leafn(p)
+               write(iulog,*) 'LITTERNAN frootn =', veg_ns%frootn(p)
+               write(iulog,*) 'LITTERNAN leafc  =', veg_cs%leafc(p)
+               write(iulog,*) 'LITTERNAN frootc =', veg_cs%frootc(p)
+               write(iulog,*) 'LITTERNAN npool  =', veg_ns%npool(p)
+               write(iulog,*) 'LITTERNAN retransn=', veg_ns%retransn(p)
+               write(iulog,*) 'LITTERNAN leafn_xfer =', veg_ns%leafn_xfer(p)
+               write(iulog,*) 'LITTERNAN frootn_xfer=', veg_ns%frootn_xfer(p)
+               write(iulog,*) 'LITTERNAN npool_to_leafn  =', this%npool_to_leafn(p)
+               write(iulog,*) 'LITTERNAN npool_to_frootn =', this%npool_to_frootn(p)
+               write(iulog,*) 'LITTERNAN leafn_xfer_to_leafn=', this%leafn_xfer_to_leafn(p)
+               write(iulog,*) 'LITTERNAN leafn_to_retransn  =', this%leafn_to_retransn(p)
+               write(iulog,*) 'LITTERNAN sminn_to_npool     =', this%sminn_to_npool(p)
+               write(iulog,*) 'LITTERNAN retransn_to_npool  =', this%retransn_to_npool(p)
+               write(iulog,*) 'LITTERNAN supplement_to_plantn=', this%supplement_to_plantn(p)
+               write(iulog,*) 'LITTERNAN   sen_nloss_litter(prev step)=', this%sen_nloss_litter(p)
+               write(iulog,*) 'LITTERNAN   livestemn_to_litter=', this%livestemn_to_litter(p)
+               write(iulog,*) 'LITTERNAN   leafn_to_litter    =', this%leafn_to_litter(p)
+               write(iulog,*) 'LITTERNAN   frootn_to_litter   =', this%frootn_to_litter(p)
+               write(iulog,*) 'LITTERNAN   m_leafn_to_litter  =', this%m_leafn_to_litter(p)
+               write(iulog,*) 'LITTERNAN   m_frootn_to_litter =', this%m_frootn_to_litter(p)
                call endrun(msg = 'veg_nf_summary: NaN in litter N loss terms: '//errMsg(__FILE__, __LINE__))
           endif
          this%sen_nloss_litter(p) = &
