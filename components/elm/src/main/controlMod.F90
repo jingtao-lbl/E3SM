@@ -49,7 +49,7 @@ module controlMod
                         use_var_soil_thick, use_lake_wat_storage, &
                         forest_fert_exp, ECA_Pconst_RGspin, NFIX_PTASE_plant, &
                         use_nutrient_carbononly_fix, &
-                        use_nfix_balance_fix, &
+                        use_nfix_balance_fix, use_eca_solution_conc_fix, &
                         use_pheno_flux_limiter, startdate_add_temperature, &
                         startdate_add_co2, add_temperature, add_co2, &
                         const_climate_hist, use_top_solar_rad, snow_shape, &
@@ -228,7 +228,8 @@ contains
     namelist /elm_inparm/ &
          NFIX_PTASE_plant, &
          use_nutrient_carbononly_fix, &
-         use_nfix_balance_fix
+         use_nfix_balance_fix, &
+         use_eca_solution_conc_fix
 
     ! BGC balance check
     namelist /elm_inparm/ &
@@ -874,6 +875,7 @@ contains
     ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): switches added on this branch
     call mpi_bcast (use_nutrient_carbononly_fix, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (use_nfix_balance_fix, 1, MPI_LOGICAL, 0, mpicom, ier)
+    call mpi_bcast (use_eca_solution_conc_fix, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (bgc_balance_check_tolerance, 1, MPI_REAL8, 0, mpicom, ier)
     call mpi_bcast (use_pheno_flux_limiter, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (startdate_add_temperature, 1, MPI_CHARACTER, 0, mpicom, ier)

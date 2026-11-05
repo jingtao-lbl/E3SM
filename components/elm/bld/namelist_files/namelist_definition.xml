@@ -139,6 +139,17 @@ If TRUE consider priority of plant to get a fraction of
 symbiotic N fixation and P phosphatase
 </entry>
 
+<entry id="use_eca_solution_conc_fix" type="logical" category="elm_physics"
+       group="elm_inparm" valid_values="">
+Jing Tao (2026-08-21, branch snowtorain-panarctic-archive): guard the divisions by soil
+water in the ECA nutrient competition solver. The NO3 and P solution concentrations are
+computed as smin_no3_vr/h2osoi_vol and max(0, solutionp_vr/h2osoi_vol) with no guard, while
+the NH4 denominator carries a strictly positive adsorption term. In a soil layer holding
+neither liquid water nor ice, h2osoi_vol is zero and these give NaN or infinity, which reach
+the plant uptake as NaN. When .true., the concentration is zero where h2osoi_vol is not
+positive or is NaN: with no water there is no solution phase. Default: .false.
+</entry>
+
 <entry id="use_nfix_balance_fix" type="logical" category="elm_physics"
        group="elm_inparm" valid_values="">
 Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): make ColNBalanceCheck count the

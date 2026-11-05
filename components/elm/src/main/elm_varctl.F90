@@ -482,6 +482,14 @@ module elm_varctl
   ! .false. leaves the upstream behavior unchanged.
   logical, public :: use_nfix_balance_fix = .false.
   !$acc declare create(use_nfix_balance_fix)
+
+  ! Jing Tao (2026-08-21, branch snowtorain-panarctic-archive): the ECA solver divides the
+  ! NO3 and P contents by h2osoi_vol with no guard, and a layer with no liquid water or ice
+  ! then gives NaN or infinity. When .true., those solution concentrations are zero where
+  ! h2osoi_vol is not positive or is NaN. Default .false. leaves the upstream behavior
+  ! unchanged.
+  logical, public :: use_eca_solution_conc_fix = .false.
+  !$acc declare create(use_eca_solution_conc_fix)
   !-----------------------------------------------------------------------
   !CO2 and warming experiments
   character(len=8), public :: startdate_add_temperature ='99991231'
