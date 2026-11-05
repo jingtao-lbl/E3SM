@@ -465,6 +465,13 @@ module elm_varctl
   logical, public :: NFIX_PTASE_plant = .false.
   !$acc declare create(NFIX_PTASE_plant)
 
+  ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): diagnostic for negative
+  ! plant nutrient pools. When .true., print their sources and sinks and set a negative N
+  ! pool to zero instead of aborting. The clamp discards N without accounting for it:
+  ! diagnosis only. Default .false.
+  logical, public :: use_npool_diag = .false.
+  !$acc declare create(use_npool_diag)
+
   ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): in the carbon-only years of
   ! an AD spin-up the plant N and P draws are the full carbon-driven demand while both
   ! supplements are zero (for N, demand minus draw cancels; for P, its branch is not entered

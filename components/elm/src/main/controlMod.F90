@@ -48,7 +48,7 @@ module controlMod
   use elm_varctl, only: nu_com, use_dynroot, use_fan, fan_mode, fan_to_bgc_veg, &
                         use_var_soil_thick, use_lake_wat_storage, &
                         forest_fert_exp, ECA_Pconst_RGspin, NFIX_PTASE_plant, &
-                        use_nutrient_carbononly_fix, &
+                        use_npool_diag, use_nutrient_carbononly_fix, &
                         use_nfix_balance_fix, use_eca_solution_conc_fix, &
                         use_pheno_flux_limiter, startdate_add_temperature, &
                         startdate_add_co2, add_temperature, add_co2, &
@@ -227,6 +227,7 @@ contains
          ECA_Pconst_RGspin
     namelist /elm_inparm/ &
          NFIX_PTASE_plant, &
+         use_npool_diag, &
          use_nutrient_carbononly_fix, &
          use_nfix_balance_fix, &
          use_eca_solution_conc_fix
@@ -873,6 +874,7 @@ contains
     call mpi_bcast (ECA_Pconst_RGspin, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (NFIX_PTASE_plant, 1, MPI_LOGICAL, 0, mpicom, ier)
     ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): switches added on this branch
+    call mpi_bcast (use_npool_diag, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (use_nutrient_carbononly_fix, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (use_nfix_balance_fix, 1, MPI_LOGICAL, 0, mpicom, ier)
     call mpi_bcast (use_eca_solution_conc_fix, 1, MPI_LOGICAL, 0, mpicom, ier)

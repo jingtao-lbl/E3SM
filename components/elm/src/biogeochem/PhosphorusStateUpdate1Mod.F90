@@ -9,6 +9,7 @@ module PhosphorusStateUpdate1Mod
   use elm_varpar             , only : crop_prog, i_met_lit, i_cel_lit, i_lig_lit, i_cwd
   use elm_varctl             , only : iulog
   use pftvarcon              , only : iscft
+  use pftvarcon              , only : noveg
   use soilorder_varcon       , only : smax,ks_sorption
   use VegetationPropertiesType         , only : veg_vp
   use CNDecompCascadeConType , only : decomp_cascade_con
@@ -18,6 +19,7 @@ module PhosphorusStateUpdate1Mod
   ! bgc interface & pflotran:
   use elm_varctl             , only : use_pflotran, pf_cmode
   use elm_varctl             , only : nu_com
+  use elm_varctl             , only : use_npool_diag
   use elm_varctl             , only : use_nutrient_carbononly_fix
   use elm_varctl             , only : carbon_only
   ! forest fertilization experiment
@@ -351,6 +353,15 @@ contains
               ! shortfall to supplement_to_plantp, which ColPBalanceCheck counts as an
               ! input.
               if (use_nutrient_carbononly_fix .and. carbon_only .and. veg_ps%ppool(p) < 0._r8) then
+                 ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): diagnostic,
+                 ! active only with use_npool_diag: name the patch the fix corrects.
+                 if (use_npool_diag) then
+                    write(iulog,'(A,I8,A,I8,A,I4,A,L2,A,E14.6,A,E14.6)') &
+                         'PFIXFIRE p=', p, ' c=', veg_pp%column(p), &
+                         ' itype=', veg_pp%itype(p), &
+                         ' active=', veg_pp%active(p), ' wtcol=', veg_pp%wtcol(p), &
+                         ' deficit=', veg_ps%ppool(p)
+                 end if
                  veg_pf%supplement_to_plantp(p) = veg_pf%supplement_to_plantp(p) &
                                                 - veg_ps%ppool(p) / dt
                  veg_ps%ppool(p) = 0._r8

@@ -9246,6 +9246,14 @@ module VegetationDataType
          avgflag='A', long_name='deployment of soil mineral N uptake', &
          ptr_patch=this%sminn_to_npool)
 
+    ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): history field for the
+    ! plant N supplement, so the supplement added by use_nutrient_carbononly_fix can be
+    ! followed through a spin-up. Inactive by default; request it with hist_fincl.
+    this%supplement_to_plantn(begp:endp) = spval
+    call hist_addfld1d (fname='SUPPLEMENT_TO_PLANTN', units='gN/m^2/s', &
+         avgflag='A', long_name='supplementary N flux to plant (carbon-only solvency)', &
+         ptr_patch=this%supplement_to_plantn, default='inactive')
+
     this%npool_to_leafn(begp:endp) = spval
     call hist_addfld1d (fname='NPOOL_TO_LEAFN', units='gN/m^2/s', &
          avgflag='A', long_name='allocation to leaf N', &
@@ -10337,6 +10345,13 @@ module VegetationDataType
          ptr_patch=this%sminp_to_ppool)
 
     this%ppool_to_leafp(begp:endp) = spval
+    ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): P counterpart of
+    ! SUPPLEMENT_TO_PLANTN. Inactive by default; request it with hist_fincl.
+    this%supplement_to_plantp(begp:endp) = spval
+    call hist_addfld1d (fname='SUPPLEMENT_TO_PLANTP', units='gP/m^2/s', &
+         avgflag='A', long_name='supplementary P flux to plant (carbon-only solvency)', &
+         ptr_patch=this%supplement_to_plantp, default='inactive')
+
     call hist_addfld1d (fname='PPOOL_TO_LEAFP', units='gP/m^2/s', &
          avgflag='A', long_name='allocation to leaf P', &
          ptr_patch=this%ppool_to_leafp, default='inactive')

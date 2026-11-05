@@ -139,6 +139,17 @@ If TRUE consider priority of plant to get a fraction of
 symbiotic N fixation and P phosphatase
 </entry>
 
+<entry id="use_npool_diag" type="logical" category="elm_physics"
+       group="elm_inparm" valid_values="">
+Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): diagnostic for negative plant
+nutrient pools. When .true., NitrogenStateUpdate1 prints every source and sink of a patch
+whose N pool is negative after its update (NPOOLDIAG lines), the carbon-only fix prints each
+patch it corrects (NFIXFIRE and PFIXFIRE lines), and PrecisionControl sets a negative N pool
+to zero and continues (NPOOLCLAMP lines) instead of aborting. The clamp discards N without
+accounting for it, so this is for diagnosis only, never for production runs. Default:
+.false.
+</entry>
+
 <entry id="use_eca_solution_conc_fix" type="logical" category="elm_physics"
        group="elm_inparm" valid_values="">
 Jing Tao (2026-08-21, branch snowtorain-panarctic-archive): guard the divisions by soil

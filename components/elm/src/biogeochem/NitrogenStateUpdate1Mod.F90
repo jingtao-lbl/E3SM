@@ -10,6 +10,7 @@ module NitrogenStateUpdate1Mod
   use elm_varctl             , only : iulog
   use elm_varcon             , only : nitrif_n2o_loss_frac
   use pftvarcon              , only : iscft
+  use pftvarcon              , only : noveg
   use VegetationPropertiesType         , only : veg_vp
   use CNDecompCascadeConType , only : decomp_cascade_con
   use CNStateType            , only : cnstate_type
@@ -24,6 +25,7 @@ module NitrogenStateUpdate1Mod
   use elm_time_manager       , only : get_curr_date
   use CNStateType            , only : fert_type , fert_continue, fert_dose, fert_start, fert_end
   use elm_varctl             , only : forest_fert_exp
+  use elm_varctl             , only : use_npool_diag
   use elm_varctl             , only : use_nutrient_carbononly_fix
   use elm_varctl             , only : carbon_only
   use elm_varctl             , only : nu_com
@@ -386,11 +388,35 @@ contains
                   veg_ns%grainn_storage(p)     = veg_ns%grainn_storage(p)     + veg_nf%npool_to_grainn_storage(p)*dt
               end if
 
+              ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): diagnostic,
+              ! active only with use_npool_diag. Print every source and sink of a patch
+              ! whose N pool is negative after the update.
+              if (use_npool_diag .and. veg_ns%npool(p) < 0._r8) then
+                 write(iulog,'(A,I8,A,E14.6)') 'NPOOLDIAG p=', p, ' npool=', veg_ns%npool(p)
+                 write(iulog,'(A,4E14.6)') 'NPOOLDIAG   src sminn,suppl,retrans,nfix=', &
+                      veg_nf%sminn_to_npool(p)*dt, veg_nf%supplement_to_plantn(p)*dt, &
+                      veg_nf%retransn_to_npool(p)*dt, veg_nf%nfix_to_plantn(p)*dt
+                 write(iulog,'(A,4E14.6)') 'NPOOLDIAG   snk leaf,leafst,froot,frootst=', &
+                      veg_nf%npool_to_leafn(p)*dt, veg_nf%npool_to_leafn_storage(p)*dt, &
+                      veg_nf%npool_to_frootn(p)*dt, veg_nf%npool_to_frootn_storage(p)*dt
+                 write(iulog,'(A,E14.6,A,E14.6)') 'NPOOLDIAG   retransn=', veg_ns%retransn(p), &
+                      ' leafn=', veg_ns%leafn(p)
+              end if
+
               ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): in carbon-only
               ! mode the N draws are the full carbon-driven demand and supplement_to_plantn
               ! is zero, so the pool can go negative. Set it to zero and add the shortfall
               ! to supplement_to_plantn, which ColNBalanceCheck counts as an input.
               if (use_nutrient_carbononly_fix .and. carbon_only .and. veg_ns%npool(p) < 0._r8) then
+                 ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): diagnostic,
+                 ! active only with use_npool_diag: name the patch the fix corrects.
+                 if (use_npool_diag) then
+                    write(iulog,'(A,I8,A,I8,A,I4,A,L2,A,E14.6,A,E14.6)') &
+                         'NFIXFIRE p=', p, ' c=', veg_pp%column(p), &
+                         ' itype=', veg_pp%itype(p), &
+                         ' active=', veg_pp%active(p), ' wtcol=', veg_pp%wtcol(p), &
+                         ' deficit=', veg_ns%npool(p)
+                 end if
                  veg_nf%supplement_to_plantn(p) = veg_nf%supplement_to_plantn(p) &
                                                 - veg_ns%npool(p) / dt
                  veg_ns%npool(p) = 0._r8
