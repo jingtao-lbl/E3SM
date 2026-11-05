@@ -18,6 +18,8 @@ module PhosphorusStateUpdate1Mod
   ! bgc interface & pflotran:
   use elm_varctl             , only : use_pflotran, pf_cmode
   use elm_varctl             , only : nu_com
+  use elm_varctl             , only : use_nutrient_carbononly_fix
+  use elm_varctl             , only : carbon_only
   ! forest fertilization experiment
   use elm_time_manager       , only : get_curr_date
   use CNStateType            , only : fert_type , fert_continue, fert_dose, fert_start, fert_end
@@ -340,6 +342,18 @@ contains
                   veg_ps%grainp(p)             = veg_ps%grainp(p)             + veg_pf%ppool_to_grainp(p)*dt
                   veg_ps%ppool(p)              = veg_ps%ppool(p)              - veg_pf%ppool_to_grainp_storage(p)*dt
                   veg_ps%grainp_storage(p)     = veg_ps%grainp_storage(p)     + veg_pf%ppool_to_grainp_storage(p)*dt
+              end if
+
+              ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): in carbon-only
+              ! mode the P draws are the full carbon-driven demand and supplement_to_plantp
+              ! is zero, because its branch in AllocationMod is not entered while
+              ! carbon_only is set, so the pool can go negative. Set it to zero and add the
+              ! shortfall to supplement_to_plantp, which ColPBalanceCheck counts as an
+              ! input.
+              if (use_nutrient_carbononly_fix .and. carbon_only .and. veg_ps%ppool(p) < 0._r8) then
+                 veg_pf%supplement_to_plantp(p) = veg_pf%supplement_to_plantp(p) &
+                                                - veg_ps%ppool(p) / dt
+                 veg_ps%ppool(p) = 0._r8
               end if
 
               ! move storage pools into transfer pools

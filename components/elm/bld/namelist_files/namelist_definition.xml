@@ -139,6 +139,19 @@ If TRUE consider priority of plant to get a fraction of
 symbiotic N fixation and P phosphatase
 </entry>
 
+<entry id="use_nutrient_carbononly_fix" type="logical" category="elm_physics"
+       group="elm_inparm" valid_values="">
+Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): keep the plant N and P pools
+solvent in the carbon-only years of an AD spin-up. While carbon_only is set, the plant N and
+P draws are the full carbon-driven demand and the supplements that should meet that demand
+are zero: the N supplement is computed as demand minus draw, which cancels exactly, and the
+P supplement is in a branch that is not entered while carbon_only is set. On a cold start
+the pools then go negative and PrecisionControl aborts. When .true., a pool that is negative
+after its update in carbon-only mode is set to zero and the shortfall is added to
+supplement_to_plantn or supplement_to_plantp, which the N and P balance checks count as an
+external input. Default: .false.
+</entry>
+
 <entry id="bgc_balance_check_tolerance" type="real" category="elm_physics"
        group="elm_inparm" valid_values="" >
 BGC balance check tolerance

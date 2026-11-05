@@ -464,6 +464,15 @@ module elm_varctl
   ! Priority of plant to get symbiotic N fixation, phosphatase
   logical, public :: NFIX_PTASE_plant = .false.
   !$acc declare create(NFIX_PTASE_plant)
+
+  ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): in the carbon-only years of
+  ! an AD spin-up the plant N and P draws are the full carbon-driven demand while both
+  ! supplements are zero (for N, demand minus draw cancels; for P, its branch is not entered
+  ! while carbon_only is set). When .true., a negative pool is set to zero and its shortfall
+  ! is added to supplement_to_plantn or supplement_to_plantp, which the balance checks count
+  ! as an input. Default .false. leaves the upstream behavior unchanged.
+  logical, public :: use_nutrient_carbononly_fix = .false.
+  !$acc declare create(use_nutrient_carbononly_fix)
   !-----------------------------------------------------------------------
   !CO2 and warming experiments
   character(len=8), public :: startdate_add_temperature ='99991231'

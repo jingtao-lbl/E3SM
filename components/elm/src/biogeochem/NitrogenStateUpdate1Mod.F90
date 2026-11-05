@@ -24,6 +24,8 @@ module NitrogenStateUpdate1Mod
   use elm_time_manager       , only : get_curr_date
   use CNStateType            , only : fert_type , fert_continue, fert_dose, fert_start, fert_end
   use elm_varctl             , only : forest_fert_exp
+  use elm_varctl             , only : use_nutrient_carbononly_fix
+  use elm_varctl             , only : carbon_only
   use elm_varctl             , only : nu_com
   use elm_varctl             , only : NFIX_PTASE_plant
   use decompMod              , only : bounds_type
@@ -382,6 +384,16 @@ contains
                   veg_ns%grainn(p)             = veg_ns%grainn(p)             + veg_nf%npool_to_grainn(p)*dt
                   veg_ns%npool(p)              = veg_ns%npool(p)              - veg_nf%npool_to_grainn_storage(p)*dt
                   veg_ns%grainn_storage(p)     = veg_ns%grainn_storage(p)     + veg_nf%npool_to_grainn_storage(p)*dt
+              end if
+
+              ! Jing Tao (2026-08-20, branch snowtorain-panarctic-archive): in carbon-only
+              ! mode the N draws are the full carbon-driven demand and supplement_to_plantn
+              ! is zero, so the pool can go negative. Set it to zero and add the shortfall
+              ! to supplement_to_plantn, which ColNBalanceCheck counts as an input.
+              if (use_nutrient_carbononly_fix .and. carbon_only .and. veg_ns%npool(p) < 0._r8) then
+                 veg_nf%supplement_to_plantn(p) = veg_nf%supplement_to_plantn(p) &
+                                                - veg_ns%npool(p) / dt
+                 veg_ns%npool(p) = 0._r8
               end if
 
               ! move storage pools into transfer pools
